@@ -1,1 +1,91 @@
-
+{
+  "cotizacion_bna": {
+    "fuente_url": "https://bna.com.ar/Personas",
+    "concepto": "Cotizacion Billete Dolar U.S.A Venta",
+    "valor_referencia_ars": 1625.0,
+    "actualizar_automatico": true
+  },
+  "defaults_selector": {
+    "tension": "Monofasico",
+    "kms_ubicacion": 60,
+    "solo_materiales": false,
+    "metros_cable_paneles": 10,
+    "zanjeo_suelo": true,
+    "consumo_mensual_kwh": 75,
+    "hsp": 4.5,
+    "perdidas_pct": 15,
+    "tension_sistema_v": 48,
+    "cobertura_ongrid_pct": 50,
+    "dias_autonomia": 1,
+    "dod_pct": 80,
+    "respaldo_nocturno_pct": 40,
+    "tipo_instalacion_paneles": "TECHO",
+    "dolar_ars": 1625.0,
+    "tarifa_kwh_ars": 172,
+    "potencia_critica_w": 600,
+    "horas_autonomia_critica": 12,
+    "factor_simultaneidad": 0.8
+  },
+  "campos_por_modo": {
+    "ongrid": [
+      "cliente_proyecto",
+      "localidad",
+      "tension",
+      "tipo_instalacion_paneles",
+      "kms_ubicacion",
+      "solo_materiales",
+      "consumo_mensual_kwh",
+      "cobertura_ongrid_pct",
+      "hsp",
+      "perdidas_pct",
+      "tarifa_kwh_ars",
+      "dolar_ars"
+    ],
+    "offgrid": [
+      "cliente_proyecto",
+      "localidad",
+      "tension",
+      "tipo_instalacion_paneles",
+      "metros_cable_paneles",
+      "zanjeo_suelo",
+      "kms_ubicacion",
+      "solo_materiales",
+      "consumo_mensual_kwh",
+      "hsp",
+      "perdidas_pct",
+      "tension_sistema_v",
+      "dias_autonomia",
+      "dod_pct",
+      "dolar_ars"
+    ],
+    "hibrido": [
+      "cliente_proyecto",
+      "localidad",
+      "tension",
+      "tipo_instalacion_paneles",
+      "metros_cable_paneles",
+      "zanjeo_suelo",
+      "kms_ubicacion",
+      "solo_materiales",
+      "consumo_mensual_kwh",
+      "cobertura_ongrid_pct",
+      "respaldo_nocturno_pct",
+      "potencia_critica_w",
+      "horas_autonomia_critica",
+      "factor_simultaneidad",
+      "hsp",
+      "perdidas_pct",
+      "tension_sistema_v",
+      "dod_pct",
+      "dolar_ars"
+    ],
+    "manual": [
+      "cliente_proyecto",
+      "localidad",
+      "tension",
+      "kms_ubicacion",
+      "solo_materiales",
+      "dolar_ars"
+    ]
+  }
+}
