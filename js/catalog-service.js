@@ -48,16 +48,48 @@ function parseCsv(text) {
   });
 }
 
+function normKey(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function pickField(row, candidates) {
+  const entries = Object.entries(row);
+  for (const cand of candidates) {
+    const target = normKey(cand);
+    const found = entries.find(([k]) => normKey(k) === target);
+    if (found && String(found[1]).trim() !== "") {
+      return found[1];
+    }
+  }
+  return null;
+}
+
 function toNumber(val, fallback = null) {
   if (val === undefined || val === null || String(val).trim() === "") {
     return fallback;
   }
-  const normalized = String(val)
+  let s = String(val)
+    .replace(/%/g, "")
     .replace(/\$/g, "")
-    .replace(/US/gi, "")
-    .replace(/\s+/g, "")
-    .replace(",", ".");
-  const num = Number(normalized);
+    .replace(/u\$s/gi, "")
+    .replace(/us/gi, "")
+    .replace(/\s+/g, "");
+
+  if (s.includes(",") && s.includes(".")) {
+    if (s.lastIndexOf(",") > s.lastIndexOf(".")) {
+      s = s.replace(/\./g, "").replace(",", ".");
+    } else {
+      s = s.replace(/,/g, "");
+    }
+  } else if (s.includes(",")) {
+    s = s.replace(",", ".");
+  }
+
+  const num = Number(s);
   return Number.isFinite(num) ? num : fallback;
 }
 
@@ -113,77 +145,152 @@ export class CatalogService {
   _mapSheetsRowsToCatalogo(preciosRows, proveedoresRows) {
     const proveedores = {};
     for (const r of proveedoresRows) {
-      const prov = String(r.Proveedor || r.proveedor || "").trim();
-      if (!prov) continue;
-      proveedores[prov] = normalizeMargin(r.Margen ?? r.margen ?? 0);
+      const provRaw = pickField(r, ["Proveedor", "Marca"]);
+      if (!provRaw) continue;
+      const prov = String(provRaw).trim();
+      const margenRaw = pickField(r, ["MargenProveedor", "Margen", "Margen_Proveedor"]);
+      proveedores[prov] = normalizeMargin(margenRaw);
     }
 
     const catalogo = [];
     for (const r of preciosRows) {
-      const modelo = String(r.Modelo || r.modelo || "").trim();
-      if (!modelo) continue;
+      const modeloRaw = pickField(r, ["Modelo", "Codigo", "Item"]);
+      if (!modeloRaw) continue;
+      const modelo = String(modeloRaw).trim();
 
-      const prov = String(r.Proveedor || r.proveedor || "").trim();
-      const desc = String(r.Descripcion || r.descripcion || modelo).trim();
-      const descCorta = String(
-        r.Descripcion_Corta || r.descripcion_corta || desc
+      const prov = String(pickField(r, ["Proveedor", "Marca"]) || "").trim();
+      const desc = String(
+        pickField(r, ["Descripcion", "Detalle", "Nombre"]) || modelo
       ).trim();
-      const cat = String(r.Categoria || r.categoria || "GENERAL").trim();
-      const ivaRate = normalizeIva(r.IVA ?? r.iva ?? 0.21);
+      const descCorta = String(
+        pickField(r, ["Descripcion_Corta", "DescripcionCorta", "Corta"]) || desc
+      ).trim();
+      const cat = String(
+        pickField(r, ["Categoria", "Rubro", "Tipo"]) || "GENERAL"
+      ).trim();
+      const ivaRate = normalizeIva(pickField(r, ["IVA", "AlicuotaIVA"]) ?? 0.21);
 
-      const costoBase = toNumber(r.Costo_Base_USD ?? r.costo_base_usd, null);
-      const descPctRaw = toNumber(r.Descuento_Pct ?? r.descuento_pct, 0);
-      const descPct = descPctRaw > 1 ? descPctRaw / 100 : descPctRaw;
-      const margen = proveedores[prov] ?? 0;
-
-      const costoUnit =
-        costoBase !== null
-          ? Number((costoBase * (1 - descPct)).toFixed(4))
-          : toNumber(r.Costo_Unit_USD ?? r.costo_unit_usd, null);
-
-      let precioVenta = toNumber(
-        r.Precio_Venta_USD ?? r.precio_venta_usd,
+      const costoBase = toNumber(
+        pickField(r, [
+          "Costo[u$sbna]",
+          "Costo_Base_USD",
+          "CostoBaseUSD",
+          "CostoBase",
+          "Costo"
+        ]),
         null
       );
-      if (precioVenta === null && costoUnit !== null) {
+
+      const descPctRaw = toNumber(
+        pickField(r, ["Descuento[%]", "Descuento_Pct", "Descuento", "DescPct"]),
+        0
+      );
+      const descPct = descPctRaw > 1 ? descPctRaw / 100 : descPctRaw;
+
+      const provKeyMatch = Object.keys(proveedores).find(
+        (k) => k.toLowerCase() === prov.toLowerCase()
+      );
+      const margen = provKeyMatch !== undefined ? proveedores[provKeyMatch] : 0;
+
+      const costoUnitSheet = toNumber(
+        pickField(r, [
+          "Costo_UnitarioUSA",
+          "Costo_Unit_USD",
+          "CostoUnitUSD",
+          "CostoUSA"
+        ]),
+        null
+      );
+      const costoUnit =
+        costoUnitSheet !== null
+          ? costoUnitSheet
+          : costoBase !== null
+            ? Number((costoBase * (1 - descPct)).toFixed(4))
+            : null;
+
+      let precioVenta = toNumber(
+        pickField(r, [
+          "PrecioVentaUSA",
+          "Precio_Venta_USD",
+          "PrecioVentaUSD",
+          "PrecioVenta",
+          "PV_USA"
+        ]),
+        null
+      );
+
+      // Si en la planilla no viene calculado PrecioVentaUSA, lo calculamos desde Costo_UnitarioUSA * (1 + MargenProveedor)
+      if ((precioVenta === null || precioVenta === 0) && costoUnit !== null && costoUnit > 0) {
         precioVenta = Number((costoUnit * (1 + margen)).toFixed(4));
       }
 
-      const iva105 =
-        precioVenta !== null && Math.abs(ivaRate - 0.105) < 1e-6
-          ? Number((precioVenta * 0.105).toFixed(4))
-          : 0;
-      const iva21 =
-        precioVenta !== null && Math.abs(ivaRate - 0.21) < 1e-6
-          ? Number((precioVenta * 0.21).toFixed(4))
-          : 0;
-      const precioFinal =
-        precioVenta !== null
-          ? Number((precioVenta + iva105 + iva21).toFixed(4))
-          : null;
+      const iva105Sheet = toNumber(pickField(r, ["PrecioVenta_IVA105_USA"]), null);
+      const iva21Sheet = toNumber(pickField(r, ["PrecioVenta_IVA21_USA"]), null);
+      const precioFinalSheet = toNumber(pickField(r, ["PrecioVenta_c_ivaUSA"]), null);
 
+      const iva105 =
+        iva105Sheet !== null
+          ? iva105Sheet
+          : precioVenta !== null && Math.abs(ivaRate - 0.105) < 1e-6
+            ? Number((precioVenta * 0.105).toFixed(4))
+            : 0;
+
+      const iva21 =
+        iva21Sheet !== null
+          ? iva21Sheet
+          : precioVenta !== null && Math.abs(ivaRate - 0.21) < 1e-6
+            ? Number((precioVenta * 0.21).toFixed(4))
+            : 0;
+
+      const precioFinal =
+        precioFinalSheet !== null
+          ? precioFinalSheet
+          : precioVenta !== null
+            ? Number((precioVenta + iva105 + iva21).toFixed(4))
+            : null;
+
+      // Mapeo de columnas técnicas de PRECIOS
       const tec = {};
-      for (const [k, v] of Object.entries(r)) {
-        const keyLower = k.toLowerCase();
-        if (
-          [
-            "wp",
-            "voc",
-            "isc",
-            "vmp",
-            "imp",
-            "kwh",
-            "potencia_kw",
-            "kw",
-            "vmppt_min",
-            "vmppt_max",
-            "tension_v",
-            "vdc"
-          ].includes(keyLower) &&
-          String(v).trim() !== ""
-        ) {
-          tec[keyLower] = toNumber(v, v);
+      const techFields = [
+        "SubCategoria",
+        "Marca",
+        "Tipo",
+        "Sist_Tension",
+        "Bat_Ah",
+        "Energia_kWh",
+        "VdcBAT",
+        "kW",
+        "kVApico",
+        "Max PV Array Power [W]",
+        "NroMppt",
+        "Vmppt_min",
+        "Vmppt_max",
+        "Vdc_max",
+        "Start-up Voltaje",
+        "Rated_PV_Input_Voltage",
+        "Max Solar Charge Current [A]",
+        "wp",
+        "voc",
+        "isc",
+        "vmp",
+        "imp"
+      ];
+
+      for (const tf of techFields) {
+        const rawVal = pickField(r, [tf]);
+        if (rawVal !== null) {
+          const numVal = toNumber(rawVal, null);
+          tec[tf] = numVal !== null ? numVal : String(rawVal).trim();
+          tec[normKey(tf)] = numVal !== null ? numVal : String(rawVal).trim();
         }
+      }
+
+      // Compatibilidad con claves usadas por los motores de cálculo
+      if (tec.energiakwh !== undefined && tec.kwh === undefined) {
+        tec.kwh = tec.energiakwh;
+      }
+      if (tec.kw !== undefined && tec.potenciakw === undefined) {
+        tec.potenciakw = tec.kw;
       }
 
       catalogo.push({
@@ -238,7 +345,7 @@ export class CatalogService {
 
     if (!sheetsPreciosUrl || sheetsPreciosUrl.startsWith("PEGA_AQUI")) {
       throw new Error(
-        "Falta configurar google_sheets_precios_csv en data/parametros_ingenieria.json. Google Sheets es la única fuente de precios."
+        "Falta configurar google_sheets_precios_csv en data/parametros_ingenieria.json."
       );
     }
 
