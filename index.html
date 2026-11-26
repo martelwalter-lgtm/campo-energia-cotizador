@@ -1,1 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campo Energía — Cotizador Solar</title>
+  <link rel="stylesheet" href="./assets/styles/theme.css" />
+</head>
+<body>
+  <header class="ce-header">
+    <div class="ce-brand">
+      <h1>CAMPO ENERGÍA</h1>
+      <span>Cotizador Técnico-Comercial · On-Grid · Off-Grid · Híbrido · Manual</span>
+    </div>
+    <nav class="ce-tabs" id="ceTabs">
+      <button class="ce-tab active" data-sistema="ONGRID">On-Grid</button>
+      <button class="ce-tab" data-sistema="OFFGRID">Off-Grid</button>
+      <button class="ce-tab" data-sistema="HIBRIDO">Híbrido</button>
+      <button class="ce-tab" data-sistema="MANUAL">Manual / Kits</button>
+    </nav>
+  </header>
 
+  <main class="ce-container">
+    <aside class="ce-card ce-selector-col">
+      <h2>Selector de Parámetros</h2>
+      <form id="ceSelectorForm"></form>
+      <div class="ce-actions">
+        <button class="ce-btn secondary" id="btnReset" type="button">Restablecer</button>
+        <button class="ce-btn" id="btnPrint" type="button">Imprimir / PDF</button>
+      </div>
+    </aside>
+
+    <section class="ce-card">
+      <h2>Dimensionamiento y Presupuesto</h2>
+      <div id="ceAlerts"></div>
+      <div class="ce-kpis" id="ceKpis"></div>
+
+      <div id="ceManualBox" style="display: none;">
+        <div class="ce-manual-add">
+          <select id="manualItemSelect"></select>
+          <input id="manualItemQty" type="number" min="1" step="1" value="1" />
+          <button class="ce-btn" id="manualAddBtn" type="button">+ Agregar</button>
+        </div>
+      </div>
+
+      <div class="ce-table-wrap">
+        <table class="ce-table">
+          <thead>
+            <tr>
+              <th>Modelo</th>
+              <th>Descripción</th>
+              <th>Categoría</th>
+              <th class="num">Cant.</th>
+              <th class="num">Unit. USD</th>
+              <th class="num">Subtotal</th>
+              <th class="num">IVA</th>
+              <th class="num">Total USD</th>
+            </tr>
+          </thead>
+          <tbody id="ceItemsBody"></tbody>
+        </table>
+      </div>
+
+      <div class="ce-totales">
+        <div class="ce-totales-box" id="ceTotalesBox"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
