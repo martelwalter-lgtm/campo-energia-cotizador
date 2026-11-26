@@ -13,7 +13,7 @@ export async function obtenerDolarBnaVenta(fallbackValor = 1625) {
       }
     }
   } catch {
-    // Respaldo automático al valor de referencia si el navegador bloquea la petición o no hay red
+    // Respaldo automático al valor de referencia si falla la consulta o CORS
   }
   return Number(fallbackValor) || 1625;
 }
