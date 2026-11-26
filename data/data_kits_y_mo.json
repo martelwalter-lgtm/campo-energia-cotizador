@@ -1,0 +1,707 @@
+{
+  "kits_receta": {
+    "ONGRIDMONO_ELEC_V1": {
+      "kit": "ONGRIDMONO_ELEC_V1",
+      "descripcion": "OnGrid materiales electricos",
+      "items": [
+        {
+          "item": "SUP2-PV500V",
+          "descripcion": "Descargador de sobretensiones en corriente continua Tipo II 500Vcc marca Suntree",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 1.0
+        },
+        {
+          "item": "SUP2-D302P",
+          "descripcion": "Descargador Sobretensión CA 2P Tipo2",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 1.0
+        },
+        {
+          "item": "SL7-63 550V 2P 20A",
+          "descripcion": "Interruptor Termomagnetico de CC 550V 20A",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 1.0
+        },
+        {
+          "item": "CAJA_4",
+          "descripcion": "caja plastica 4 componentes",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "CABLECANAL_6080",
+          "descripcion": "Cablecanal 60anchox80alto calado x 1 mts",
+          "proveedor": "LOCAL",
+          "cantidad": 2.0
+        }
+      ]
+    },
+    "OFFGRID_TABLERO _ELEC_FULL": {
+      "kit": "OFFGRID_TABLERO _ELEC_FULL",
+      "descripcion": "OffGrid Tablero electrico Full materiales",
+      "items": [
+        {
+          "item": "CN40-CM-01",
+          "descripcion": "Par de conectores MC4 (macho y hembra) con hoja de cobre - terminales abiertos para cables de 2.5 a 6.5 mm2. Marca Slocable",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 4.0
+        },
+        {
+          "item": "DC FUSE 15 A",
+          "descripcion": "Portafusible con fusible 15A 1000Vcc",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 2.0
+        },
+        {
+          "item": "SUP2-PV500V",
+          "descripcion": "Descargador de sobretensiones en corriente continua Tipo II 500Vcc marca Suntree",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 1.0
+        },
+        {
+          "item": "SUP2-D302P",
+          "descripcion": "Descargador Sobretensión CA 2P Tipo2",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 1.0
+        },
+        {
+          "item": "SL7-63 550V 2P 20A",
+          "descripcion": "Interruptor Termomagnetico de CC 550V 20A",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 2.0
+        },
+        {
+          "item": "CAJA_4",
+          "descripcion": "caja plastica 4 componentes",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "CAJA_8",
+          "descripcion": "caja plastica 8 componentes",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "CAJA_210_GRIS",
+          "descripcion": "caja de pase 210x210x110 GRIS (caja para recoleccion de paneles)",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "CABLECANAL_4030",
+          "descripcion": "Cablecanal 40x30 color blanco (40 base)",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "SFTF0104 N",
+          "descripcion": "Cable Solar Conducom SA 1 x4.00mm2; Conductor de Cobre estañado, 1,5kV en CC, Temperatura Continua 90°C; Resistencia UV. Bobinas de 100m. Color negro",
+          "proveedor": "MULTIRADIO",
+          "cantidad": 10.0
+        },
+        {
+          "item": "TM_15_BAW",
+          "descripcion": "termomagnetica 15A BAW para salida consumidores",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "DF_30_BAW",
+          "descripcion": "disyuntor diferencial 30mA BAW",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "NH_BASE_T00",
+          "descripcion": "base NH T00 1 X 16",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "NH_FUS_125A",
+          "descripcion": "fusible NH T00 125A",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "CABLE_TIERRA_1X10",
+          "descripcion": "cable tierra 1x10mm2",
+          "proveedor": "LOCAL",
+          "cantidad": 5.0
+        },
+        {
+          "item": "CABLE_TPR_3X2.5",
+          "descripcion": "cable tipo taller 3 x 2.5mm2 para el tablero x mt",
+          "proveedor": "LOCAL",
+          "cantidad": 5.0
+        },
+        {
+          "item": "UNION_CU_35",
+          "descripcion": "union de cobre estañado 35mm2",
+          "proveedor": "LOCAL",
+          "cantidad": 4.0
+        },
+        {
+          "item": "CABLE_UNI_35",
+          "descripcion": "cable UNIPOLAR 1 x 35 mm2 x 1 mt",
+          "proveedor": "LOCAL",
+          "cantidad": 3.0
+        },
+        {
+          "item": "TABLERO_MAD_12",
+          "descripcion": "bastidor madera melamina 12 mm 600 x 800 mm",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "20103N/2",
+          "descripcion": "llave conmutadora 3 x 20 A ELIBET",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        }
+      ]
+    },
+    "MO_OFFGRID_TABLERO_ELECTRICO": {
+      "kit": "MO_OFFGRID_TABLERO_ELECTRICO",
+      "descripcion": "Mano Obra confeccion tablero Electrico Sist FV OffGrid",
+      "items": [
+        {
+          "item": "MO_OFICIAL_TALLER",
+          "descripcion": "Armado de tablero electrico OffGrid",
+          "proveedor": "MANO_OBRA",
+          "cantidad": 12.0
+        }
+      ]
+    },
+    "MO_ESTRU_SUELO_xP": {
+      "kit": "MO_ESTRU_SUELO_xP",
+      "descripcion": "Mano Obra Estructura sobre suelo x panel",
+      "items": [
+        {
+          "item": "MO_OFICIAL_CAMPO",
+          "descripcion": "hs instalación en sitio oficial instalador",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        },
+        {
+          "item": "MO_AYUDANTE",
+          "descripcion": "Hs instalación en sitio ayudante",
+          "proveedor": "LOCAL",
+          "cantidad": 1.0
+        }
+      ]
+    },
+    "MO_ESTRU_SUELO_2P": {
+      "kit": "MO_ESTRU_SUELO_2P",
+      "descripcion": "Mano Obra Estructura sobre suelo para 2 paneles",
+      "items": [
+        {
+          "item": "MO_OFICIAL_CAMPO",
+          "descripcion": "hs instalación en sitio oficial instalador",
+          "proveedor": "LOCAL",
+          "cantidad": 8.0
+        },
+        {
+          "item": "MO_AYUDANTE",
+          "descripcion": "Hs instalación en sitio ayudante",
+          "proveedor": "LOCAL",
+          "cantidad": 6.0
+        }
+      ]
+    },
+    "MO_ESTRU_TECHO_CxP": {
+      "kit": "MO_ESTRU_TECHO_CxP",
+      "descripcion": "Mano Obra Estructura sobre techo coplanar x panel",
+      "items": [
+        {
+          "item": "MO_OFICIAL_CAMPO",
+          "descripcion": "hs instalación en sitio oficial instalador",
+          "proveedor": "LOCAL",
+          "cantidad": 0.5
+        },
+        {
+          "item": "MO_AYUDANTE",
+          "descripcion": "Hs instalación en sitio ayudante",
+          "proveedor": "LOCAL",
+          "cantidad": 0.5
+        }
+      ]
+    },
+    "MO_ONGRID_SIN_ESTRUC": {
+      "kit": "MO_ONGRID_SIN_ESTRUC",
+      "descripcion": "Mano Obra Sist OnGrid (instalac elec, config)",
+      "items": [
+        {
+          "item": "MO_OFICIAL_CAMPO",
+          "descripcion": "hs instalación en sitio oficial instalador",
+          "proveedor": "LOCAL",
+          "cantidad": 3.0
+        },
+        {
+          "item": "MO_AYUDANTE",
+          "descripcion": "Hs instalación en sitio ayudante",
+          "proveedor": "LOCAL",
+          "cantidad": 3.0
+        }
+      ]
+    },
+    "MO_OFFGRID_SIN_ESTRUC": {
+      "kit": "MO_OFFGRID_SIN_ESTRUC",
+      "descripcion": "Mano Obra Sist OnGrid (instalac elec, config)",
+      "items": [
+        {
+          "item": "MO_OFICIAL_CAMPO",
+          "descripcion": "hs instalación en sitio oficial instalador",
+          "proveedor": "LOCAL",
+          "cantidad": 3.0
+        },
+        {
+          "item": "MO_AYUDANTE",
+          "descripcion": "Hs instalación en sitio ayudante",
+          "proveedor": "LOCAL",
+          "cantidad": 3.0
+        }
+      ]
+    },
+    "MO_SIST_FV_SUELO_2P": {
+      "kit": "MO_SIST_FV_SUELO_2P",
+      "descripcion": "Mano Obra Sist Fotovoltaico sobre suelo con 2 paneles",
+      "items": [
+        {
+          "item": "MO_OFICIAL_CAMPO",
+          "descripcion": "hs instalación en sitio oficial instalador",
+          "proveedor": "LOCAL",
+          "cantidad": 4.0
+        },
+        {
+          "item": "MO_AYUDANTE",
+          "descripcion": "Hs instalación en sitio ayudante",
+          "proveedor": "LOCAL",
+          "cantidad": 2.0
+        },
+        {
+          "item": "MO_INGENIERIA",
+          "descripcion": "Hs ingenieria y desarrollo administracion",
+          "proveedor": "LOCAL",
+          "cantidad": 12.0
+        },
+        {
+          "item": "MO_MOVILIDAD",
+          "descripcion": "Movilidad en litros de nafta",
+          "proveedor": "LOCAL",
+          "cantidad": 40.0
+        }
+      ]
+    }
+  },
+  "kits_ventas": {
+    "KI101_CE": {
+      "kit_id": "KI101_CE",
+      "sistema": "Sistema_Fotovoltaico",
+      "tipo": "OnGrid",
+      "tension": "Monofasico",
+      "titulo": "Kit de Sistema_Fotovoltaico OnGrid Monofasico 2kW - Inversor Growatt 2000W, 4 pantallas Solares Monocristalino 580Wp, proteccion de CC, 20 mts cable solar y conectores. Ideal para hogares con bajo consumo electrico (100 a 200 kWh/mes), genera 270  kWh/mes en promedio (ahorro estimado del 50%)",
+      "componentes": [
+        {
+          "modelo": "MIC2000TL-X2",
+          "descripcion": "Inversor On Grid Growatt Monofasico 1MPPT 2000W 5 Años Garantía - Incluye Dongle WIFI-X",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "AS-7M144-HC-580W",
+          "descripcion": "Panel Solar Fotovoltaico N Type Amerisolar 144 celdas 580Wp cable 1280mm marco 30mm",
+          "cantidad": 4.0
+        },
+        {
+          "modelo": "SL7-63 550V 2P 20A",
+          "descripcion": "Interruptor Termomagnetico de CC 550V 20A",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "SFTF0104 N",
+          "descripcion": "Cable Solar Conducom SA 1 x4.00mm2; Conductor de Cobre estañado, 1,5kV en CC, Temperatura Continua 90°C; Resistencia UV. Bobinas de 100m. Color negro",
+          "cantidad": 20.0
+        },
+        {
+          "modelo": "CN40-CM-01",
+          "descripcion": "Par de conectores MC4 (macho y hembra) con hoja de cobre - terminales abiertos para cables de 2.5 a 6.5 mm2. Marca Slocable",
+          "cantidad": 1.0
+        }
+      ]
+    },
+    "KI102_CE": {
+      "kit_id": "KI102_CE",
+      "sistema": "Sistema_Fotovoltaico",
+      "tipo": "OnGrid",
+      "tension": "Monofasico",
+      "titulo": "Kit de Sistema_Fotovoltaico OnGrid Monofasico 3kW - Inversor Growatt 3000W, 4 pantallas Solares Monocristalino 580Wp, 20 mts cable solar y conectores.",
+      "componentes": [
+        {
+          "modelo": "MIC3000TL-X2",
+          "descripcion": "Inversor On Grid Growatt Monofasico 1MPPT 3000W 5 Años Garantía - Incluye Dongle WIFI-X",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "AS-7M144-HC-580W",
+          "descripcion": "Panel Solar Fotovoltaico N Type Amerisolar 144 celdas 580Wp cable 1280mm marco 30mm",
+          "cantidad": 4.0
+        },
+        {
+          "modelo": "SL7-63 550V 2P 20A",
+          "descripcion": "Interruptor Termomagnetico de CC 550V 20A",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "SFTF0104 N",
+          "descripcion": "Cable Solar Conducom SA 1 x4.00mm2; Conductor de Cobre estañado, 1,5kV en CC, Temperatura Continua 90°C; Resistencia UV. Bobinas de 100m. Color negro",
+          "cantidad": 20.0
+        },
+        {
+          "modelo": "CN40-CM-01",
+          "descripcion": "Par de conectores MC4 (macho y hembra) con hoja de cobre - terminales abiertos para cables de 2.5 a 6.5 mm2. Marca Slocable",
+          "cantidad": 1.0
+        }
+      ]
+    },
+    "KI103_CE": {
+      "kit_id": "KI103_CE",
+      "sistema": "Sistema_Fotovoltaico",
+      "tipo": "OnGrid",
+      "tension": "Monofasico",
+      "titulo": "Kit de Sistema_Fotovoltaico OnGrid Monofasico 5kW - Inversor Growatt 5000W, 4 pantallas Solares Monocristalino 580Wp, 20 mts cable solar y conectores. Ideal para hogares con alto consumo electrico (600 kWh/mes), genera 540  kWh/mes en promedio (ahorro estimado del 50%)",
+      "componentes": [
+        {
+          "modelo": "MIC5000TL-X2",
+          "descripcion": "Inversor On Grid Growatt Monofasico 1MPPT 5000W 5 Años Garantía - Incluye Dongle WIFI-X",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "AS-7M144-HC-580W",
+          "descripcion": "Panel Solar Fotovoltaico N Type Amerisolar 144 celdas 580Wp cable 1280mm marco 30mm",
+          "cantidad": 8.0
+        },
+        {
+          "modelo": "SL7-63 550V 2P 20A",
+          "descripcion": "Interruptor Termomagnetico de CC 550V 20A",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "SFTF0104 N",
+          "descripcion": "Cable Solar Conducom SA 1 x4.00mm2; Conductor de Cobre estañado, 1,5kV en CC, Temperatura Continua 90°C; Resistencia UV. Bobinas de 100m. Color negro",
+          "cantidad": 20.0
+        },
+        {
+          "modelo": "CN40-CM-01",
+          "descripcion": "Par de conectores MC4 (macho y hembra) con hoja de cobre - terminales abiertos para cables de 2.5 a 6.5 mm2. Marca Slocable",
+          "cantidad": 1.0
+        }
+      ]
+    },
+    "KI111_CE": {
+      "kit_id": "KI111_CE",
+      "sistema": "Sistema_Fotovoltaico",
+      "tipo": "OnGrid",
+      "tension": "Trifasico",
+      "titulo": "Kit de Sistema_Fotovoltaico OnGrid Trifasico 3kW-Llave en Mano con estructura sobre el Suelo, Tablero eléctrico con sistema de proteccion, llave de ByPass para grupo electrogeno",
+      "componentes": [
+        {
+          "modelo": "MOD3000TL3-X",
+          "descripcion": "Inversor FV Growatt Trifasico 2MPPT 3000W 5 Años Garantía - Con AFCI",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "TPM-E",
+          "descripcion": "Medidor Eastron SDM630 Trifasico hasta 100A por fase (medición directa sin trafos de corriente) para limitar inyección de inversores Growatt - se vende solo en proporción a los inversores",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "SHINE WIFI-X",
+          "descripcion": "Dongle Wifi para inversor Growatt 1 año de garantía - Para inversores TL-X , Se vende solo en proporción a los inversores",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "AS-7M144-HC-555W30",
+          "descripcion": "Panel Solar Fotovoltaico Mono Perc Amerisolar 144 celdas 555Wp cable 1350mm con marco de 30mm",
+          "cantidad": 8.0
+        },
+        {
+          "modelo": "SUP2-PV1000V",
+          "descripcion": "Descargador de sobretensiones en corriente continua Tipo II 1000Vcc marca Suntree Imax:40kA",
+          "cantidad": 2.0
+        },
+        {
+          "modelo": "SL7-63 550V 2P 20A",
+          "descripcion": "Interruptor Termomagnetico de CC 550V 20A",
+          "cantidad": 2.0
+        },
+        {
+          "modelo": "NXB-63-4P-C25-6KA",
+          "descripcion": "Int. Termomagnético CHINT NXB-63, In:25A, Icn:6kA, Curva C, 4-polos",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "NXL-63-4P-25A-30mA",
+          "descripcion": "DISYUNTOR TETRAPOLAR CHINT NXL, 25A - 30mA - Clase AC - 6kA",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "MO_OFICIAL_TALLER",
+          "descripcion": "Armado de tablero electrico OffGrid",
+          "cantidad": 12.0
+        },
+        {
+          "modelo": "MO_OFICIAL_CAMPO",
+          "descripcion": "hs instalación en sitio oficial instalador",
+          "cantidad": 12.0
+        },
+        {
+          "modelo": "MO_AYUDANTE",
+          "descripcion": "Hs instalación en sitio ayudante",
+          "cantidad": 8.0
+        },
+        {
+          "modelo": "MO_INGENIERIA",
+          "descripcion": "Hs ingenieria y desarrollo administracion",
+          "cantidad": 12.0
+        },
+        {
+          "modelo": "MO_MOVILIDAD",
+          "descripcion": "Movilidad en litros de nafta",
+          "cantidad": 40.0
+        }
+      ]
+    },
+    "KI112_CE": {
+      "kit_id": "KI112_CE",
+      "sistema": "Sistema_Fotovoltaico",
+      "tipo": "OnGrid",
+      "tension": "Trifasico",
+      "titulo": "'Kit de Sistema_Fotovoltaico OnGrid Trifasico 3kW-Materiales con estructura sobre el Suelo, Tablero eléctrico con sistema de proteccion, llave de ByPass para grupo electrogeno",
+      "componentes": [
+        {
+          "modelo": "MOD3000TL3-X",
+          "descripcion": "Inversor FV Growatt Trifasico 2MPPT 3000W 5 Años Garantía - Con AFCI",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "TPM-E",
+          "descripcion": "Medidor Eastron SDM630 Trifasico hasta 100A por fase (medición directa sin trafos de corriente) para limitar inyección de inversores Growatt - se vende solo en proporción a los inversores",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "SHINE WIFI-X",
+          "descripcion": "Dongle Wifi para inversor Growatt 1 año de garantía - Para inversores TL-X , Se vende solo en proporción a los inversores",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "AS-7M144-HC-555W30",
+          "descripcion": "Panel Solar Fotovoltaico Mono Perc Amerisolar 144 celdas 555Wp cable 1350mm con marco de 30mm",
+          "cantidad": 8.0
+        },
+        {
+          "modelo": "SUP2-PV1000V",
+          "descripcion": "Descargador de sobretensiones en corriente continua Tipo II 1000Vcc marca Suntree Imax:40kA",
+          "cantidad": 2.0
+        },
+        {
+          "modelo": "SL7-63 550V 2P 20A",
+          "descripcion": "Interruptor Termomagnetico de CC 550V 20A",
+          "cantidad": 2.0
+        },
+        {
+          "modelo": "NXB-63-4P-C25-6KA",
+          "descripcion": "Int. Termomagnético CHINT NXB-63, In:25A, Icn:6kA, Curva C, 4-polos",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "NXL-63-4P-25A-30mA",
+          "descripcion": "DISYUNTOR TETRAPOLAR CHINT NXL, 25A - 30mA - Clase AC - 6kA",
+          "cantidad": 1.0
+        }
+      ]
+    },
+    "KI301_CE": {
+      "kit_id": "KI301_CE",
+      "sistema": "Sistema_Bombeo_Solar",
+      "tipo": "",
+      "tension": "",
+      "titulo": "Kit de Bombeo Solar Sumergible 3\" hasta 4500 lts/h p tanque australiano \"llave en mano\"",
+      "componentes": [
+        {
+          "modelo": "AS-7M120N-HC-470W",
+          "descripcion": "Panel Solar Fotovoltaico N Type Amerisolar 120 celdas 470Wp  Marco 30mm Cable 1200mm (36 unidades por pallet)",
+          "cantidad": 2.0
+        },
+        {
+          "modelo": "HD-3SSC4.5-50-48-400",
+          "descripcion": "Bomba Sumergible H 400W Handuro. Pozo 3\". Bomba Centrifuga  con controlador DC",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "MULTIPANELC60x2",
+          "descripcion": "KIT MULTIPANEL REFORZADA C60 PARA 2 PANELES",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "SO_SOP_BOMBA",
+          "descripcion": "Varillas y bulones para sujecion de bomba sumergible",
+          "cantidad": 5.0
+        },
+        {
+          "modelo": "CABLE-ACERO-3",
+          "descripcion": "cable acero galv 3mm",
+          "cantidad": 18.0
+        },
+        {
+          "modelo": "SOPORTE-SENSOR",
+          "descripcion": "soporte sensor",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "977932",
+          "descripcion": "Tubo ISO PN 10,0 KG/CM 50MM C 2,1MM X 6MTS",
+          "cantidad": 3.0
+        },
+        {
+          "modelo": "994430",
+          "descripcion": "codo a 90 HH - PN10 50MM",
+          "cantidad": 3.0
+        },
+        {
+          "modelo": "63844/5",
+          "descripcion": "union doble HH - JP - PN10 50MM",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "CN40-CM-01",
+          "descripcion": "Par de conectores MC4 (macho y hembra) con hoja de cobre - terminales abiertos para cables de 2.5 a 6.5 mm2. Marca Slocable",
+          "cantidad": 2.0
+        },
+        {
+          "modelo": "DC FUSE 15 A",
+          "descripcion": "Portafusible con fusible 15A 1000Vcc",
+          "cantidad": 2.0
+        },
+        {
+          "modelo": "SUP2-PV500V",
+          "descripcion": "Descargador de sobretensiones en corriente continua Tipo II 500Vcc marca Suntree",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "CAJA_8",
+          "descripcion": "caja plastica 8 componentes",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "CAJA_115_115",
+          "descripcion": "caja de pase 115x115x80 (caja paso bomba sumergible a pie de bomba)",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "SFTF0104 N",
+          "descripcion": "Cable Solar Conducom SA 1 x4.00mm2; Conductor de Cobre estañado, 1,5kV en CC, Temperatura Continua 90°C; Resistencia UV. Bobinas de 100m. Color negro",
+          "cantidad": 10.0
+        },
+        {
+          "modelo": "CABLE_TIERRA_1X10",
+          "descripcion": "cable tierra 1x10mm2",
+          "cantidad": 5.0
+        },
+        {
+          "modelo": "CABLE_PLANO_4_1.5",
+          "descripcion": "cable plano para bomba solar 4 x 1,5mm",
+          "cantidad": 15.0
+        },
+        {
+          "modelo": "CABLE_TPR_3X1.5",
+          "descripcion": "cable tipo taller 2 x 1.5mm2 para sensor de nive de tanque",
+          "cantidad": 10.0
+        },
+        {
+          "modelo": "CABLE_TPR_3X2.5",
+          "descripcion": "cable tipo taller 3 x 2.5mm2 para el tablero x mt",
+          "cantidad": 5.0
+        },
+        {
+          "modelo": "JABALINA3-8",
+          "descripcion": "Jabalina 3/8\" X 1000 mm + morcetos",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "FLOTANTE-TAUTRAL",
+          "descripcion": "flotante automatico paraa tanque australiano para bomba",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "MO_OFICIAL_CAMPO",
+          "descripcion": "hs instalación en sitio oficial instalador",
+          "cantidad": 12.0
+        },
+        {
+          "modelo": "MO_AYUDANTE",
+          "descripcion": "Hs instalación en sitio ayudante",
+          "cantidad": 8.0
+        },
+        {
+          "modelo": "MO_INGENIERIA",
+          "descripcion": "Hs ingenieria y desarrollo administracion",
+          "cantidad": 3.0
+        },
+        {
+          "modelo": "MO_MOVILIDAD",
+          "descripcion": "Movilidad en litros de nafta",
+          "cantidad": 40.0
+        }
+      ]
+    },
+    "KI302_CE": {
+      "kit_id": "KI302_CE",
+      "sistema": "Sistema_Bombeo_Solar",
+      "tipo": "",
+      "tension": "",
+      "titulo": "Kit de Bombeo Solar Sumergible 3\" hasta 4500 lts/h p tanque australiano \"Materiales\"",
+      "componentes": [
+        {
+          "modelo": "AS-7M120N-HC-470W",
+          "descripcion": "Panel Solar Fotovoltaico N Type Amerisolar 120 celdas 470Wp  Marco 30mm Cable 1200mm (36 unidades por pallet)",
+          "cantidad": 2.0
+        },
+        {
+          "modelo": "HD-3SSC4.5-50-48-400",
+          "descripcion": "Bomba Sumergible H 400W Handuro. Pozo 3\". Bomba Centrifuga  con controlador DC",
+          "cantidad": 1.0
+        }
+      ]
+    },
+    "KI401_CE": {
+      "kit_id": "KI401_CE",
+      "sistema": "Sistema_aguadas_pres",
+      "tipo": "",
+      "tension": "",
+      "titulo": "KIT Hidroneumatico tanq 25lts, presontato manometro, canilla racord",
+      "componentes": [
+        {
+          "modelo": "CER-V.HI.1.0024.0",
+          "descripcion": "Tanque Hidroneumatico Esferico INTERVAREM 24  LTS",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "CER-Q.HY.1.RA01.0",
+          "descripcion": "RACORD 5 VIAS MOTORARG",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "CER-PS-02C",
+          "descripcion": "PRESOSTATO LEO PS-02C PARA TANQUE HIDRONEUMATICO",
+          "cantidad": 1.0
+        },
+        {
+          "modelo": "CER-MM4-38/5",
+          "descripcion": "Manometro BEYCA 100MM ESTANDAR 0-5KG. ROSCA INF. 1/2 NPT",
+          "cantidad": 1.0
+        }
+      ]
+    }
+  }
+}
