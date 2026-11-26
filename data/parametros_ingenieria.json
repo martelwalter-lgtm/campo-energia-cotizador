@@ -218,11 +218,9 @@
     "caida_tension_max_ac_pct": 3.0,
     "factor_viaticos_km": 0.8
   }
-{
   "fuentes_datos": {
     "google_sheets_precios_csv": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSS8Uwf4Bdrtdnlx4Xn-QgFroGQWF4XS_Iyz4RBjo_DUcgw1WaANAyvFpz8hOXsdVsw8cnlOis6RKKw/pub?gid=2143090969&single=true&output=csv
 ",
     "google_sheets_proveedores_csv": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSS8Uwf4Bdrtdnlx4Xn-QgFroGQWF4XS_Iyz4RBjo_DUcgw1WaANAyvFpz8hOXsdVsw8cnlOis6RKKw/pub?gid=0&single=true&output=csv"
   }
-}
 }
