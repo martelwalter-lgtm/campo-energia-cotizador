@@ -11,27 +11,6 @@
       "Gral. Lamadrid"
     ]
   },
-  "defaults_selector": {
-    "tension": "Monofasico",
-    "kms_ubicacion": 60,
-    "solo_materiales": false,
-    "metros_cable_paneles": 10,
-    "zanjeo_suelo": true,
-    "consumo_mensual_kwh": 75,
-    "hsp": 4.5,
-    "perdidas_pct": 15,
-    "tension_sistema_v": 48,
-    "cobertura_ongrid_pct": 50,
-    "dias_autonomia": 1,
-    "dod_pct": 80,
-    "respaldo_nocturno_pct": 40,
-    "tipo_instalacion_paneles": "TECHO",
-    "dolar_ars": 1590,
-    "tarifa_kwh_ars": 172,
-    "potencia_critica_w": 600,
-    "horas_autonomia_critica": 12,
-    "factor_simultaneidad": 0.8
-  },
   "hsp_tabla": {
     "HSP Invierno": 3,
     "HSP Promedio": 4.5,
@@ -84,6 +63,38 @@
       "kwp_min": 12,
       "kwp_max": 15,
       "inversor_kw": 12
+    }
+  ],
+  "consumos_base": [
+    {
+      "cantidad": 5,
+      "descripcion": "Lámpara de led",
+      "potencia_w": 12.0,
+      "horas_dia": 5.0
+    },
+    {
+      "cantidad": 1,
+      "descripcion": "Heladera",
+      "potencia_w": 160.0,
+      "horas_dia": 12.0
+    },
+    {
+      "cantidad": 2,
+      "descripcion": "cargador",
+      "potencia_w": 8.0,
+      "horas_dia": 3.0
+    },
+    {
+      "cantidad": 1,
+      "descripcion": "TV 27\" LED",
+      "potencia_w": 70.0,
+      "horas_dia": 3.0
+    },
+    {
+      "cantidad": 0,
+      "descripcion": "Aire acond 2200 frigorias",
+      "potencia_w": 1350.0,
+      "horas_dia": 5.0
     }
   ],
   "paneles_tecnicos": {
@@ -172,38 +183,6 @@
       "imp": 14.79
     }
   },
-  "consumos_base": [
-    {
-      "cantidad": 5,
-      "descripcion": "Lámpara de led",
-      "potencia_w": 12.0,
-      "horas_dia": 5.0
-    },
-    {
-      "cantidad": 1,
-      "descripcion": "Heladera",
-      "potencia_w": 160.0,
-      "horas_dia": 12.0
-    },
-    {
-      "cantidad": 2,
-      "descripcion": "cargador",
-      "potencia_w": 8.0,
-      "horas_dia": 3.0
-    },
-    {
-      "cantidad": 1,
-      "descripcion": "TV 27\" LED",
-      "potencia_w": 70.0,
-      "horas_dia": 3.0
-    },
-    {
-      "cantidad": 0,
-      "descripcion": "Aire acond 2200 frigorias",
-      "potencia_w": 1350.0,
-      "horas_dia": 5.0
-    }
-  ],
   "reglas_ingenieria": {
     "factor_inversor_critico": 1.25,
     "dod_por_bateria": {
