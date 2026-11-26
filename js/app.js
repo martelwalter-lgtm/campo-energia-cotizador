@@ -1,4 +1,3 @@
-
 import { CatalogService, obtenerDolarBnaVenta } from "./catalog-service.js";
 import { createState } from "./state.js";
 import { calcularOnGrid } from "./engines/ongrid.js";
@@ -27,7 +26,14 @@ const el = {
 };
 
 function fmtUsd(val) {
-  return `US$ ${(Number(val) \vert{}\vert{} 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }  function fmtArs(val) { return `$ ${(Math.round(Number(val) || 0)).toLocaleString("es-AR")}`;
+  return `US$ ${(Number(val) || 0).toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function fmtArs(val) {
+  return `$ ${(Math.round(Number(val) || 0)).toLocaleString("es-AR")}`;
 }
 
 function aplicarCamposPorModo(modo) {
@@ -138,4 +144,232 @@ function renderSelector(st) {
     </div>
     <div class="ce-field" data-campo="solo_materiales">
       <label class="ce-checkbox">
-        <input id="f_solo_mat
+        <input id="f_solo_mat" type="checkbox" ${st.solo_materiales ? "checked" : ""} />
+        Solo materiales (sin mano de obra ni viáticos)
+      </label>
+    </div>
+  `;
+
+  aplicarCamposPorModo(sistemaActual);
+
+  el.selectorForm.querySelectorAll("input, select").forEach((input) => {
+    input.addEventListener("input", onSelectorChange);
+    input.addEventListener("change", onSelectorChange);
+  });
+}
+
+function onSelectorChange() {
+  stateManager.updateSelector({
+    cliente: document.getElementById("f_cliente")?.value ?? "",
+    localidad: document.getElementById("f_localidad")?.value ?? "Olavarría",
+    tension: document.getElementById("f_tension")?.value ?? "Monofasico",
+    tipo_instalacion_paneles: document.getElementById("f_tipo_inst")?.value ?? "TECHO",
+    metros_cable_paneles: Number(document.getElementById("f_metros_cable")?.value) || 0,
+    zanjeo_suelo: Boolean(document.getElementById("f_zanjeo")?.checked),
+    kms_ubicacion: Number(document.getElementById("f_kms")?.value) || 0,
+    consumo_mensual_kwh: Number(document.getElementById("f_consumo_mes")?.value) || 75,
+    cobertura_ongrid_pct: Number(document.getElementById("f_cobertura")?.value) || 50,
+    respaldo_nocturno_pct: Number(document.getElementById("f_respaldo_noct")?.value) || 40,
+    hsp: Number(document.getElementById("f_hsp")?.value) || 4.5,
+    perdidas_pct: Number(document.getElementById("f_perdidas")?.value) || 15,
+    tension_sistema_v: Number(document.getElementById("f_tension_sys")?.value) || 48,
+    dias_autonomia: Number(document.getElementById("f_autonomia")?.value) || 1,
+    dod_pct: Number(document.getElementById("f_dod")?.value) || 80,
+    potencia_critica_w: Number(document.getElementById("f_pot_crit")?.value) || 600,
+    horas_autonomia_critica: Number(document.getElementById("f_hs_crit")?.value) || 12,
+    factor_simultaneidad: Number(document.getElementById("f_simultaneidad")?.value) || 0.8,
+    dolar_ars: Number(document.getElementById("f_dolar")?.value) || 1625,
+    tarifa_kwh_ars: Number(document.getElementById("f_tarifa")?.value) || 172,
+    solo_materiales: Boolean(document.getElementById("f_solo_mat")?.checked)
+  });
+  calcularYRenderizar();
+}
+
+function ejecutarMotor() {
+  const st = stateManager.getState();
+  switch (sistemaActual) {
+    case "OFFGRID":
+      return calcularOffGrid(catalog, st);
+    case "HIBRIDO":
+      return calcularHibrido(catalog, st);
+    case "MANUAL":
+      return calcularManual(catalog, st, lineasManuales);
+    case "ONGRID":
+    default:
+      return calcularOnGrid(catalog, st);
+  }
+}
+
+function calcularYRenderizar() {
+  const resultado = ejecutarMotor();
+  const rt = resultado.resumenTecnico || {};
+
+  const alertas = [rt.alerta_mppt, rt.alerta_descarga_bateria].filter(Boolean);
+  el.alerts.innerHTML = alertas
+    .map((msg) => `<div class="ce-alert">⚠️ ${msg}</div>`)
+    .join("");
+
+  const kpiCards = [];
+  if (rt.potencia_pico_kwp !== undefined) {
+    kpiCards.push({
+      label: "Potencia Solar",
+      value: `${rt.potencia_pico_kwp} kWp (${rt.cantidad_paneles || 0} p.)`
+    });
+  }
+  if (rt.inversor_modelo) {
+    kpiCards.push({
+      label: "Inversor Sugerido",
+      value: rt.inversor_modelo
+    });
+  }
+  if (rt.capacidad_banco_kwh !== undefined) {
+    kpiCards.push({
+      label: "Banco Baterías",
+      value: `${rt.capacidad_banco_kwh} kWh (${rt.cantidad_baterias || 0} u.)`
+    });
+  }
+  if (rt.generacion_mensual_kwh !== undefined) {
+    kpiCards.push({
+      label: "Generación Mensual",
+      value: `${rt.generacion_mensual_kwh} kWh/mes`
+    });
+  }
+  if (rt.roi_estimado_anios) {
+    kpiCards.push({
+      label: "Retorno Estimado",
+      value: `${rt.roi_estimado_anios} años`
+    });
+  }
+  if (kpiCards.length === 0) {
+    kpiCards.push({
+      label: "Ítems en Presupuesto",
+      value: `${resultado.items.length}`
+    });
+  }
+
+  el.kpis.innerHTML = kpiCards
+    .map(
+      (k) => `
+      <div class="ce-kpi">
+        <div class="label">${k.label}</div>
+        <div class="value">${k.value}</div>
+      </div>`
+    )
+    .join("");
+
+  el.itemsBody.innerHTML = resultado.items
+    .map(
+      (it) => `
+      <tr>
+        <td><strong>${it.modelo}</strong></td>
+        <td>${it.descripcion}${it.nota ? ` <em>(${it.nota})</em>` : ""}</td>
+        <td>${it.categoria}</td>
+        <td class="num">${it.cantidad}</td>
+        <td class="num">${fmtUsd(it.precio_venta_usd)}</td>
+        <td class="num">${fmtUsd(it.subtotal_usd)}</td>
+        <td class="num">${fmtUsd((it.iva105_usd || 0) + (it.iva21_usd || 0))}</td>
+        <td class="num"><strong>${fmtUsd(it.total_usd)}</strong></td>
+      </tr>`
+    )
+    .join("");
+
+  const tot = resultado.totales;
+  el.totalesBox.innerHTML = `
+    <div class="ce-totales-row"><span>Subtotal Neto:</span><span>${fmtUsd(tot.neto_usd)}</span></div>
+    <div class="ce-totales-row"><span>IVA 10.5%:</span><span>${fmtUsd(tot.iva105_usd)}</span></div>
+    <div class="ce-totales-row"><span>IVA 21%:</span><span>${fmtUsd(tot.iva21_usd)}</span></div>
+    <div class="ce-totales-row final"><span>Total USD:</span><span>${fmtUsd(tot.total_usd)}</span></div>
+    <div class="ce-totales-row"><span>Total ARS (TC ${tot.dolar_ars}):</span><strong>${fmtArs(tot.total_ars)}</strong></div>
+  `;
+}
+
+function poblarSelectorManual() {
+  const items = catalog.getAllItems();
+  el.manualSelect.innerHTML = items
+    .map(
+      (it) =>
+        `<option value="${it.modelo}">${it.modelo} — ${it.descripcion_corta || it.descripcion}</option>`
+    )
+    .join("");
+}
+
+async function resolverDolarVenta(selCfg) {
+  const bnaCfg = selCfg?.cotizacion_bna || {};
+  const fallback =
+    Number(bnaCfg.valor_referencia_ars ?? selCfg?.defaults_selector?.dolar_ars ?? 1625) || 1625;
+
+  if (bnaCfg.actualizar_automatico === false) {
+    return fallback;
+  }
+
+  return await obtenerDolarBnaVenta(fallback);
+}
+
+function initTabs() {
+  el.tabs.querySelectorAll(".ce-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      el.tabs.querySelectorAll(".ce-tab").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      sistemaActual = btn.dataset.sistema;
+      el.manualBox.style.display = sistemaActual === "MANUAL" ? "block" : "none";
+      aplicarCamposPorModo(sistemaActual);
+      calcularYRenderizar();
+    });
+  });
+
+  el.manualAddBtn.addEventListener("click", () => {
+    const modelo = el.manualSelect.value;
+    const cantidad = Number(el.manualQty.value) || 1;
+    if (modelo && cantidad > 0) {
+      lineasManuales.push({ modelo, cantidad });
+      calcularYRenderizar();
+    }
+  });
+
+  el.btnPrint.addEventListener("click", () => window.print());
+  el.btnReset.addEventListener("click", async () => {
+    stateManager.resetToDefaults();
+    const selCfg = catalog.getSelectorConfig?.() || {};
+    const dolarVenta = await resolverDolarVenta(selCfg);
+    stateManager.updateSelector({ dolar_ars: dolarVenta });
+    lineasManuales = [];
+    renderSelector(stateManager.getState());
+    calcularYRenderizar();
+  });
+}
+
+async function boot() {
+  try {
+    await catalog.init();
+
+    const params = catalog.getParametros() || {};
+    const selCfg = catalog.getSelectorConfig() || {};
+    const estadoInicial = catalog.getEstadoInicial() || {};
+
+    stateManager = createState({
+      ...params,
+      defaults_selector: {
+        ...(params.defaults_selector || {}),
+        ...(selCfg.defaults_selector || {}),
+        ...estadoInicial
+      },
+      consumos_base: Array.isArray(estadoInicial.consumos_base)
+        ? estadoInicial.consumos_base
+        : params.consumos_base
+    });
+
+    const dolarVenta = await resolverDolarVenta(selCfg);
+    stateManager.updateSelector({ dolar_ars: dolarVenta });
+
+    poblarSelectorManual();
+    initTabs();
+    renderSelector(stateManager.getState());
+    aplicarCamposPorModo(sistemaActual);
+    calcularYRenderizar();
+  } catch (err) {
+    console.error("Error inicializando cotizador:", err);
+    el.alerts.innerHTML = `<div class="ce-alert">Error al cargar los datos del catálogo: ${err.message}</div>`;
+  }
+}
+
+boot();
