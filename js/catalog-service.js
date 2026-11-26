@@ -1,5 +1,23 @@
 const STORAGE_KEY_OVERRIDES = "ce_cotizador_price_overrides_v1";
 
+export async function obtenerDolarBnaVenta(fallbackValor = 1625) {
+  try {
+    const resp = await fetch("https://dolarapi.com/v1/dolares/oficial", {
+      cache: "no-store"
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const venta = Number(data?.venta);
+      if (Number.isFinite(venta) && venta > 0) {
+        return venta;
+      }
+    }
+  } catch {
+    // Respaldo automático al valor de referencia si el navegador bloquea la petición o no hay red
+  }
+  return Number(fallbackValor) || 1625;
+}
+
 function parseCsvLine(line, delimiter = ",") {
   const result = [];
   let current = "";
@@ -107,11 +125,13 @@ export class CatalogService {
   constructor({
     kitsUrl = "./data/kits_y_mo.json",
     parametrosUrl = "./data/parametros_ingenieria.json",
+    selectorUrl = "./data/selector.json",
     sheetsPreciosCsvUrl = "",
     sheetsProveedoresCsvUrl = ""
   } = {}) {
     this.kitsUrl = kitsUrl;
     this.parametrosUrl = parametrosUrl;
+    this.selectorUrl = selectorUrl;
     this.sheetsPreciosCsvUrl = sheetsPreciosCsvUrl;
     this.sheetsProveedoresCsvUrl = sheetsProveedoresCsvUrl;
 
@@ -121,6 +141,8 @@ export class CatalogService {
     this.kitsReceta = {};
     this.kitsVentas = {};
     this.parametros = {};
+    this.selectorConfig = {};
+    this.estadoInicial = {};
     this.fuenteDatos = "Google Sheets";
     this.overrides = this._loadOverrides();
   }
@@ -219,7 +241,6 @@ export class CatalogService {
         null
       );
 
-      // Si en la planilla no viene calculado PrecioVentaUSA, lo calculamos desde Costo_UnitarioUSA * (1 + MargenProveedor)
       if ((precioVenta === null || precioVenta === 0) && costoUnit !== null && costoUnit > 0) {
         precioVenta = Number((costoUnit * (1 + margen)).toFixed(4));
       }
@@ -249,7 +270,6 @@ export class CatalogService {
             ? Number((precioVenta + iva105 + iva21).toFixed(4))
             : null;
 
-      // Mapeo de columnas técnicas de PRECIOS
       const tec = {};
       const techFields = [
         "SubCategoria",
@@ -285,7 +305,6 @@ export class CatalogService {
         }
       }
 
-      // Compatibilidad con claves usadas por los motores de cálculo
       if (tec.energiakwh !== undefined && tec.kwh === undefined) {
         tec.kwh = tec.energiakwh;
       }
@@ -316,21 +335,33 @@ export class CatalogService {
   }
 
   async init() {
-    const [kitsResp, paramsResp] = await Promise.all([
+    const [kitsResp, paramsResp, selectorResp] = await Promise.all([
       fetch(this.kitsUrl),
-      fetch(this.parametrosUrl)
+      fetch(this.parametrosUrl),
+      fetch(this.selectorUrl)
     ]);
 
-    if (!kitsResp.ok || !paramsResp.ok) {
-      throw new Error("Error al cargar kits_y_mo.json o parametros_ingenieria.json.");
+    if (!kitsResp.ok || !paramsResp.ok || !selectorResp.ok) {
+      throw new Error(
+        "Error al cargar kits_y_mo.json, parametros_ingenieria.json o selector.json."
+      );
     }
 
     const kitsJson = await kitsResp.json();
     const paramsJson = await paramsResp.json();
+    const selectorJson = await selectorResp.json();
 
     this.kitsReceta = kitsJson.kits_receta || {};
     this.kitsVentas = kitsJson.kits_ventas || {};
     this.parametros = paramsJson || {};
+    this.selectorConfig = selectorJson || {};
+
+    this.estadoInicial = {
+      ...(this.selectorConfig.defaults_selector || {}),
+      consumos_base: Array.isArray(this.parametros.consumos_base)
+        ? structuredClone(this.parametros.consumos_base)
+        : []
+    };
 
     const sheetsPreciosUrl = String(
       this.sheetsPreciosCsvUrl ||
@@ -452,6 +483,14 @@ export class CatalogService {
 
   getParametros() {
     return this.parametros;
+  }
+
+  getSelectorConfig() {
+    return this.selectorConfig;
+  }
+
+  getEstadoInicial() {
+    return this.estadoInicial;
   }
 
   getFuenteDatos() {
