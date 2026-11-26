@@ -41,7 +41,7 @@ function buildItem(catalogService, modelo, cantidad, nota = "") {
   };
 }
 
-function summarizeItems(items, dolarArs = 1590) {
+function summarizeItems(items, dolarArs = 1625) {
   const netoUsd = Number(
     items.reduce((acc, it) => acc + (it.subtotal_usd || 0), 0).toFixed(2)
   );
@@ -64,37 +64,65 @@ function summarizeItems(items, dolarArs = 1590) {
   };
 }
 
+function getInversorKw(item) {
+  const tec = item?.tec || {};
+  const directo = Number(
+    tec.kw || tec.potenciakw || tec.potencia_kw || tec.kvapico || 0
+  );
+  if (directo > 0) return directo;
+
+  const texto = `${item?.modelo || ""} ${item?.descripcion || ""}`;
+  const matchKw = texto.match(/(\d+(?:[.,]\d+)?)\s*k?w\b/i);
+  if (matchKw) {
+    const val = Number(matchKw[1].replace(",", "."));
+    if (val > 0) return val >= 100 ? val / 1000 : val;
+  }
+  return 0;
+}
+
 export function calcularOnGrid(catalogService, state) {
-  const params = catalogService.getParametros();
+  const params = catalogService.getParametros() || {};
   const consumoMensual = Number(state.consumo_mensual_kwh) || 75;
   const cobertura = (Number(state.cobertura_ongrid_pct) || 50) / 100;
-  const hsp = Number(state.hsp) || 4.5;
+  const hsp = Math.max(1, Number(state.hsp) || 4.5);
   const perdidasPct = Number(state.perdidas_pct) || 15;
   const factorEficiencia = Math.max(0.1, 1 - perdidasPct / 100);
 
   const energiaObjetivoDia = (consumoMensual * cobertura) / 30;
   const kwpRequerido = energiaObjetivoDia / (hsp * factorEficiencia);
 
-  // Seleccionar panel desde catálogo (categoría PANEL SOLAR)
-  const paneles = catalogService
-    .getAllItems()
-    .filter((it) => String(it.categoria).toUpperCase().includes("PANEL"));
+  // Paneles activos desde la pestaña PRECIOS de Google Sheets
+  const panelesActivos =
+    typeof catalogService.getPanelesActivos === "function"
+      ? catalogService.getPanelesActivos()
+      : catalogService.getAllItems().filter((it) => {
+          const cat = String(it.categoria || "").toUpperCase();
+          return (
+            it.activo !== false &&
+            (Number(it.precio_venta_usd) || 0) > 0 &&
+            cat.includes("PANEL") &&
+            (Number(it.tec?.wp) || 0) > 0
+          );
+        });
 
   const panelSeleccionado =
-    paneles.find((p) => Number(p.tec?.wp || p.tec?.WP || 0) >= 550) ||
-    paneles[0] ||
+    panelesActivos.find((p) => (Number(p.tec?.wp) || 0) >= 550) ||
+    panelesActivos[0] ||
     null;
 
-  const wpPanel = Number(
-    panelSeleccionado?.tec?.wp || panelSeleccionado?.tec?.WP || 585
-  );
+  const wpPanel = Number(panelSeleccionado?.tec?.wp) || 580;
+  const vocPanel = Number(panelSeleccionado?.tec?.voc) || 0;
+  const iscPanel = Number(panelSeleccionado?.tec?.isc) || 0;
+  const vmpPanel = Number(panelSeleccionado?.tec?.vmp) || 0;
+  const impPanel = Number(panelSeleccionado?.tec?.imp) || 0;
+
   const cantPaneles = Math.max(
     1,
     Math.ceil((kwpRequerido * 1000) / wpPanel)
   );
   const potenciaPicoKw = Number(((cantPaneles * wpPanel) / 1000).toFixed(2));
 
-  // Seleccionar inversor On-Grid según tensión y potencia pico
+  // Inversor On-Grid activo según tensión y potencia pico
   const esTrifasico = String(state.tension || "")
     .toLowerCase()
     .includes("tri");
@@ -102,39 +130,40 @@ export function calcularOnGrid(catalogService, state) {
   const inversores = catalogService
     .getAllItems()
     .filter((it) => {
-      const cat = String(it.categoria).toUpperCase();
-      const desc = `${it.modelo} ${it.descripcion}`.toUpperCase();
-      const esInv = cat.includes("EQUIPO") || desc.includes("INVERSOR");
+      if (it.activo === false || (Number(it.precio_venta_usd) || 0) <= 0) {
+        return false;
+      }
+      const cat = String(it.categoria || "").toUpperCase();
+      const desc = `${it.modelo || ""} ${it.descripcion || ""}`.toUpperCase();
+      const esInv =
+        cat.includes("EQUIPO") ||
+        cat.includes("INVERSOR") ||
+        desc.includes("INVERSOR");
       const esOnGrid = desc.includes("ONGRID") || desc.includes("ON-GRID");
       const matchFase = esTrifasico
         ? desc.includes("3F") || desc.includes("TRIF")
         : !desc.includes("3F") && !desc.includes("TRIF");
       return esInv && (esOnGrid || cat.includes("EQUIPO")) && matchFase;
     })
-    .sort(
-      (a, b) =>
-        (Number(a.tec?.potencia_kw || a.tec?.kw || 0) || 0) -
-        (Number(b.tec?.potencia_kw || b.tec?.kw || 0) || 0)
-    );
+    .map((it) => ({ item: it, kw: getInversorKw(it) }))
+    .filter((x) => x.kw > 0)
+    .sort((a, b) => a.kw - b.kw);
 
-  const inversorSeleccionado =
-    inversores.find(
-      (inv) =>
-        (Number(inv.tec?.potencia_kw || inv.tec?.kw || 0) || 0) >=
-        potenciaPicoKw * 0.8
-    ) ||
+  const elegidoInv =
+    inversores.find((x) => x.kw >= potenciaPicoKw * 0.8) ||
     inversores[inversores.length - 1] ||
     null;
 
-  // Validación básica de tensión de string vs ventana MPPT si existen datos
-  const vocPanel = Number(panelSeleccionado?.tec?.voc || 0);
+  const inversorSeleccionado = elegidoInv?.item || null;
+
+  // Validación de tensión de string vs ventana MPPT usando Voc del panel activo
   const vmpptMin = Number(inversorSeleccionado?.tec?.vmppt_min || 0);
   const vmpptMax = Number(inversorSeleccionado?.tec?.vmppt_max || 0);
   const vocEstimadoSerie = Number((vocPanel * cantPaneles).toFixed(1));
   const alertaMppt =
-    vmpptMax > 0 && vocEstimadoSerie > vmpptMax
+    vocPanel > 0 && vmpptMax > 0 && vocEstimadoSerie > vmpptMax
       ? `Voc estimado (${vocEstimadoSerie}V) supera Vmppt máx (${vmpptMax}V): dividir en strings en paralelo.`
-      : vmpptMin > 0 && vocEstimadoSerie < vmpptMin
+      : vocPanel > 0 && vmpptMin > 0 && vocEstimadoSerie < vmpptMin
         ? `Voc estimado (${vocEstimadoSerie}V) por debajo de Vmppt mín (${vmpptMin}V).`
         : null;
 
@@ -151,11 +180,16 @@ export function calcularOnGrid(catalogService, state) {
   }
   if (inversorSeleccionado) {
     items.push(
-      buildItem(catalogService, inversorSeleccionado.modelo, 1, "Inversor On-Grid")
+      buildItem(
+        catalogService,
+        inversorSeleccionado.modelo,
+        1,
+        "Inversor On-Grid"
+      )
     );
   }
 
-  // Kit eléctrico y mano de obra (si no es solo materiales)
+  // Kit eléctrico y mano de obra (salvo solo materiales)
   const kitElecModelo = esTrifasico
     ? "ONGRIDTRI_ELEC_V1"
     : "ONGRIDMONO_ELEC_V1";
@@ -198,7 +232,7 @@ export function calcularOnGrid(catalogService, state) {
   );
   const generacionAnualKwh = generacionMensualKwh * 12;
   const tarifaKwh = Number(state.tarifa_kwh_ars) || 172;
-  const dolarArs = Number(state.dolar_ars) || 1590;
+  const dolarArs = Number(state.dolar_ars) || 1625;
   const ahorroAnualUsd = Number(
     ((generacionAnualKwh * tarifaKwh) / Math.max(1, dolarArs)).toFixed(2)
   );
@@ -220,6 +254,13 @@ export function calcularOnGrid(catalogService, state) {
       potencia_pico_kwp: potenciaPicoKw,
       cantidad_paneles: cantPaneles,
       panel_modelo: panelSeleccionado?.modelo || null,
+      panel_specs: {
+        wp: wpPanel,
+        voc: vocPanel,
+        isc: iscPanel,
+        vmp: vmpPanel,
+        imp: impPanel
+      },
       inversor_modelo: inversorSeleccionado?.modelo || null,
       generacion_mensual_kwh: generacionMensualKwh,
       generacion_anual_kwh: generacionAnualKwh,
