@@ -121,6 +121,14 @@ function normalizeIva(val) {
   return n > 1 ? n / 100 : n;
 }
 
+function parseActivo(val) {
+  if (val === null || val === undefined || String(val).trim() === "") {
+    return false;
+  }
+  const norm = normKey(val);
+  return ["activo", "activa", "si", "yes", "true", "1", "ok"].includes(norm);
+}
+
 export class CatalogService {
   constructor({
     kitsUrl = "./data/kits_y_mo.json",
@@ -179,6 +187,9 @@ export class CatalogService {
       const modeloRaw = pickField(r, ["Modelo", "Codigo", "Item"]);
       if (!modeloRaw) continue;
       const modelo = String(modeloRaw).trim();
+
+      const estadoRaw = pickField(r, ["Estado", "Activo", "Status", "Disponibilidad"]);
+      const activo = parseActivo(estadoRaw);
 
       const prov = String(pickField(r, ["Proveedor", "Marca"]) || "").trim();
       const desc = String(
@@ -314,6 +325,8 @@ export class CatalogService {
 
       catalogo.push({
         modelo,
+        estado: estadoRaw ? String(estadoRaw).trim() : "",
+        activo,
         proveedor: prov,
         margen,
         descripcion: desc,
@@ -469,6 +482,18 @@ export class CatalogService {
 
   getAllItems() {
     return Array.from(this.catalogoByModelo.values());
+  }
+
+  getPanelesActivos() {
+    return this.getAllItems()
+      .filter((it) => {
+        const cat = normKey(it.categoria);
+        const esPanel = cat.includes("panel");
+        const wp = Number(it.tec?.wp) || 0;
+        const precio = Number(it.precio_venta_usd) || 0;
+        return esPanel && it.activo === true && wp > 0 && precio > 0;
+      })
+      .sort((a, b) => (Number(b.tec?.wp) || 0) - (Number(a.tec?.wp) || 0));
   }
 
   getKitReceta(codigoKit) {
