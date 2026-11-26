@@ -41,7 +41,7 @@ function buildItem(catalogService, modelo, cantidad, nota = "") {
   };
 }
 
-function summarizeItems(items, dolarArs = 1590) {
+function summarizeItems(items, dolarArs = 1625) {
   const netoUsd = Number(
     items.reduce((acc, it) => acc + (it.subtotal_usd || 0), 0).toFixed(2)
   );
@@ -64,13 +64,29 @@ function summarizeItems(items, dolarArs = 1590) {
   };
 }
 
+function getInversorKw(item) {
+  const tec = item?.tec || {};
+  const directo = Number(
+    tec.kw || tec.potenciakw || tec.potencia_kw || tec.kvapico || 0
+  );
+  if (directo > 0) return directo;
+
+  const texto = `${item?.modelo || ""} ${item?.descripcion || ""}`;
+  const matchKw = texto.match(/(\d+(?:[.,]\d+)?)\s*k?w\b/i);
+  if (matchKw) {
+    const val = Number(matchKw[1].replace(",", "."));
+    if (val > 0) return val >= 100 ? val / 1000 : val;
+  }
+  return 0;
+}
+
 export function calcularHibrido(catalogService, state) {
-  const params = catalogService.getParametros();
+  const params = catalogService.getParametros() || {};
   const reglas = params.reglas_ingenieria || {};
 
   const consumoMensual = Number(state.consumo_mensual_kwh) || 75;
   const cobertura = (Number(state.cobertura_ongrid_pct) || 50) / 100;
-  const hsp = Number(state.hsp) || 4.5;
+  const hsp = Math.max(1, Number(state.hsp) || 4.5);
   const perdidasPct = Number(state.perdidas_pct) || 15;
   const factorEficiencia = Math.max(0.1, 1 - perdidasPct / 100);
 
@@ -84,27 +100,41 @@ export function calcularHibrido(catalogService, state) {
     ((potenciaCriticaW * factorInversorCritico) / 1000).toFixed(2)
   );
 
-  // 2. Campo solar según consumo objetivo diario
+  // 2. Campo solar según consumo objetivo diario y paneles activos en Google Sheets
   const energiaObjetivoDia = (consumoMensual * cobertura) / 30;
   const kwpRequerido = energiaObjetivoDia / (hsp * factorEficiencia);
 
-  const paneles = catalogService
-    .getAllItems()
-    .filter((it) => String(it.categoria).toUpperCase().includes("PANEL"));
+  const panelesActivos =
+    typeof catalogService.getPanelesActivos === "function"
+      ? catalogService.getPanelesActivos()
+      : catalogService.getAllItems().filter((it) => {
+          const cat = String(it.categoria || "").toUpperCase();
+          return (
+            it.activo !== false &&
+            (Number(it.precio_venta_usd) || 0) > 0 &&
+            cat.includes("PANEL") &&
+            (Number(it.tec?.wp) || 0) > 0
+          );
+        });
+
   const panelSeleccionado =
-    paneles.find((p) => Number(p.tec?.wp || p.tec?.WP || 0) >= 550) ||
-    paneles[0] ||
+    panelesActivos.find((p) => (Number(p.tec?.wp) || 0) >= 550) ||
+    panelesActivos[0] ||
     null;
-  const wpPanel = Number(
-    panelSeleccionado?.tec?.wp || panelSeleccionado?.tec?.WP || 585
-  );
+
+  const wpPanel = Number(panelSeleccionado?.tec?.wp) || 580;
+  const vocPanel = Number(panelSeleccionado?.tec?.voc) || 0;
+  const iscPanel = Number(panelSeleccionado?.tec?.isc) || 0;
+  const vmpPanel = Number(panelSeleccionado?.tec?.vmp) || 0;
+  const impPanel = Number(panelSeleccionado?.tec?.imp) || 0;
+
   const cantPaneles = Math.max(
     1,
     Math.ceil((kwpRequerido * 1000) / wpPanel)
   );
   const potenciaPicoKw = Number(((cantPaneles * wpPanel) / 1000).toFixed(2));
 
-  // 3. Selección de inversor híbrido
+  // 3. Selección de inversor híbrido activo
   const esTrifasico = String(state.tension || "")
     .toLowerCase()
     .includes("tri");
@@ -112,8 +142,11 @@ export function calcularHibrido(catalogService, state) {
   const inversoresHibridos = catalogService
     .getAllItems()
     .filter((it) => {
-      const cat = String(it.categoria).toUpperCase();
-      const desc = `${it.modelo} ${it.descripcion}`.toUpperCase();
+      if (it.activo === false || (Number(it.precio_venta_usd) || 0) <= 0) {
+        return false;
+      }
+      const cat = String(it.categoria || "").toUpperCase();
+      const desc = `${it.modelo || ""} ${it.descripcion || ""}`.toUpperCase();
       const esInv = cat.includes("EQUIPO") || desc.includes("INVERSOR");
       const esHib = desc.includes("HIBRID") || desc.includes("HÍBRID");
       const matchFase = esTrifasico
@@ -121,23 +154,19 @@ export function calcularHibrido(catalogService, state) {
         : !desc.includes("3F") && !desc.includes("TRIF");
       return esInv && esHib && matchFase;
     })
-    .sort(
-      (a, b) =>
-        (Number(a.tec?.potencia_kw || a.tec?.kw || 0) || 0) -
-        (Number(b.tec?.potencia_kw || b.tec?.kw || 0) || 0)
-    );
+    .map((it) => ({ item: it, kw: getInversorKw(it) }))
+    .filter((x) => x.kw > 0)
+    .sort((a, b) => a.kw - b.kw);
 
   const potenciaRequeridaInv = Math.max(inversorMinKw, potenciaPicoKw * 0.8);
-  const inversorSeleccionado =
-    inversoresHibridos.find(
-      (inv) =>
-        (Number(inv.tec?.potencia_kw || inv.tec?.kw || 0) || 0) >=
-        potenciaRequeridaInv
-    ) ||
+  const elegidoHib =
+    inversoresHibridos.find((x) => x.kw >= potenciaRequeridaInv) ||
     inversoresHibridos[inversoresHibridos.length - 1] ||
     null;
 
-  // 4. Banco de baterías de litio 48V para respaldo crítico / nocturno
+  const inversorSeleccionado = elegidoHib?.item || null;
+
+  // 4. Banco de baterías de litio 48V activo para respaldo crítico / nocturno
   const energiaCriticaKwh =
     (potenciaCriticaW * horasAutonomiaCritica) / 1000;
   const respaldoNocturnoKwh =
@@ -147,26 +176,28 @@ export function calcularHibrido(catalogService, state) {
     respaldoNocturnoKwh
   );
 
-  const bateriasLitio = catalogService
-    .getAllItems()
-    .filter((it) => {
-      const cat = String(it.categoria).toUpperCase();
-      const desc = `${it.modelo} ${it.descripcion}`.toUpperCase();
-      return (
-        (cat.includes("BATER") || desc.includes("BATER")) &&
-        (desc.includes("LITIO") || desc.includes("LIFEPO4") || desc.includes("48V"))
-      );
-    });
+  const bateriasLitio = catalogService.getAllItems().filter((it) => {
+    if (it.activo === false || (Number(it.precio_venta_usd) || 0) <= 0) {
+      return false;
+    }
+    const cat = String(it.categoria || "").toUpperCase();
+    const desc = `${it.modelo || ""} ${it.descripcion || ""}`.toUpperCase();
+    if (desc.startsWith("TIPO DE BATER")) return false;
+    return (
+      (cat.includes("BATER") || desc.includes("BATER")) &&
+      (desc.includes("LITIO") || desc.includes("LIFEPO4") || desc.includes("48V"))
+    );
+  });
 
   const bateriaSeleccionada = bateriasLitio[0] || null;
-  const kwhPorBateria = Number(bateriaSeleccionada?.tec?.kwh) || 4.8;
+  const kwhPorBateria =
+    Number(bateriaSeleccionada?.tec?.kwh || bateriaSeleccionada?.tec?.energiakwh) ||
+    4.8;
   const cantBaterias = Math.max(
     1,
     Math.ceil(energiaRespaldoObjetivo / (dodLitio * kwhPorBateria))
   );
-  const capacidadBancoKwh = Number(
-    (cantBaterias * kwhPorBateria).toFixed(2)
-  );
+  const capacidadBancoKwh = Number((cantBaterias * kwhPorBateria).toFixed(2));
 
   const items = [];
   if (panelSeleccionado) {
@@ -245,6 +276,14 @@ export function calcularHibrido(catalogService, state) {
     resumenTecnico: {
       potencia_pico_kwp: potenciaPicoKw,
       cantidad_paneles: cantPaneles,
+      panel_modelo: panelSeleccionado?.modelo || null,
+      panel_specs: {
+        wp: wpPanel,
+        voc: vocPanel,
+        isc: iscPanel,
+        vmp: vmpPanel,
+        imp: impPanel
+      },
       inversor_modelo: inversorSeleccionado?.modelo || null,
       inversor_min_critico_kw: inversorMinKw,
       capacidad_banco_kwh: capacidadBancoKwh,
