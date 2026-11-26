@@ -41,7 +41,7 @@ function buildItem(catalogService, modelo, cantidad, nota = "") {
   };
 }
 
-function summarizeItems(items, dolarArs = 1590) {
+function summarizeItems(items, dolarArs = 1625) {
   const netoUsd = Number(
     items.reduce((acc, it) => acc + (it.subtotal_usd || 0), 0).toFixed(2)
   );
@@ -64,14 +64,51 @@ function summarizeItems(items, dolarArs = 1590) {
   };
 }
 
+function getInversorKw(item) {
+  const tec = item?.tec || {};
+  const directo = Number(
+    tec.kw || tec.potenciakw || tec.potencia_kw || tec.kvapico || 0
+  );
+  if (directo > 0) return directo;
+
+  const texto = `${item?.modelo || ""} ${item?.descripcion || ""}`;
+  const matchKw = texto.match(/(\d+(?:[.,]\d+)?)\s*k?w\b/i);
+  if (matchKw) {
+    const val = Number(matchKw[1].replace(",", "."));
+    if (val > 0) return val >= 100 ? val / 1000 : val;
+  }
+  return 0;
+}
+
+function getInversorVdc(item) {
+  const tec = item?.tec || {};
+  const directo = Number(tec.vdcbatt || tec.vdcbat || tec.sist_tension || 0);
+  if ([12, 24, 48].includes(directo)) return directo;
+
+  const texto = `${item?.modelo || ""} ${item?.descripcion || ""}`.toUpperCase();
+  if (/\b48\s*V\b|VDC\s*48/.test(texto)) return 48;
+  if (/\b24\s*V\b|VDC\s*24/.test(texto)) return 24;
+  if (/\b12\s*V\b|VDC\s*12/.test(texto)) return 12;
+  return null;
+}
+
 export function calcularOffGrid(catalogService, state) {
-  const params = catalogService.getParametros();
+  const params = catalogService.getParametros() || {};
   const reglas = params.reglas_ingenieria || {};
 
-  const consumos = Array.isArray(state.consumos) ? state.consumos : [];
+  const consumos = Array.isArray(state.consumos) && state.consumos.length > 0
+    ? state.consumos
+    : Array.isArray(params.consumos_base)
+      ? params.consumos_base
+      : [];
+
   const simultaneidad = Number(state.factor_simultaneidad) || 0.8;
   const diasAutonomia = Math.max(1, Number(state.dias_autonomia) || 1);
-  const hsp = Number(state.hsp) || 4.5;
+  const hsp = Math.max(1, Number(state.hsp) || 4.5);
+  const perdidasFactor = Math.max(
+    0.5,
+    1 - Math.min(0.5, Math.max(0, (Number(state.perdidas_pct) ?? 15) / 100))
+  );
   const rendimiento = Number(reglas.rendimiento_trabajo_offgrid) || 0.8;
   const tensionSistemaV = Number(state.tension_sistema_v) || 48;
 
@@ -88,32 +125,37 @@ export function calcularOffGrid(catalogService, state) {
     return acc + cant * pot;
   }, 0);
 
-  const potenciaSimultaneaKw = Number(
-    ((potenciaTotalW * simultaneidad) / 1000).toFixed(2)
-  );
-  const energiaDiariaKwh = Number(
-    ((energiaBrutaWh * simultaneidad) / 1000).toFixed(2)
-  );
+  const consumoMensualInputKwh = Number(state.consumo_mensual_kwh) || 0;
+  const energiaPorConsumosKwh = Number(((energiaBrutaWh * simultaneidad) / 1000).toFixed(2));
+  const energiaDiariaKwh =
+    energiaPorConsumosKwh > 0
+      ? energiaPorConsumosKwh
+      : Number(((consumoMensualInputKwh / 30) * simultaneidad).toFixed(2));
 
-  // Selección de batería
+  const potenciaSimultaneaKw =
+    potenciaTotalW > 0
+      ? Number(((potenciaTotalW * simultaneidad) / 1000).toFixed(2))
+      : Number(Math.max(1, energiaDiariaKwh / 4).toFixed(2));
+
+  // Selección de batería activa con precio válido
   const dodPct = Number(state.dod_pct) || 80;
   const dod = Math.min(0.95, Math.max(0.2, dodPct / 100));
   const esLitio = dod >= 0.7;
 
-  const baterias = catalogService
-    .getAllItems()
-    .filter((it) => {
-      const cat = String(it.categoria).toUpperCase();
-      const desc = `${it.modelo} ${it.descripcion}`.toUpperCase();
-      const esBat = cat.includes("BATER") || desc.includes("BATER");
-      if (!esBat) return false;
-      const esBatLitio = desc.includes("LITIO") || desc.includes("LIFEPO4");
-      return esLitio ? esBatLitio : !esBatLitio;
-    });
+  const baterias = catalogService.getAllItems().filter((it) => {
+    if (it.activo === false || (Number(it.precio_venta_usd) || 0) <= 0) return false;
+    const cat = String(it.categoria || "").toUpperCase();
+    const desc = `${it.modelo || ""} ${it.descripcion || ""}`.toUpperCase();
+    if (desc.startsWith("TIPO DE BATER")) return false;
+    const esBat = cat.includes("BATER") || desc.includes("BATER") || desc.includes("LIFEPO4");
+    if (!esBat) return false;
+    const esBatLitio = desc.includes("LITIO") || desc.includes("LIFEPO4");
+    return esLitio ? esBatLitio : !esBatLitio;
+  });
 
   const bateriaSeleccionada = baterias[0] || null;
   const kwhPorBateria =
-    Number(bateriaSeleccionada?.tec?.kwh) ||
+    Number(bateriaSeleccionada?.tec?.kwh || bateriaSeleccionada?.tec?.energiakwh) ||
     (esLitio ? 4.8 : (tensionSistemaV * 100) / 1000);
 
   const energiaBancoRequeridaKwh =
@@ -122,60 +164,67 @@ export function calcularOffGrid(catalogService, state) {
     1,
     Math.ceil(energiaBancoRequeridaKwh / Math.max(0.5, kwhPorBateria))
   );
-  const capacidadBancoKwh = Number(
-    (cantBaterias * kwhPorBateria).toFixed(2)
-  );
+  const capacidadBancoKwh = Number((cantBaterias * kwhPorBateria).toFixed(2));
 
-  // Dimensionamiento solar (paneles)
-  const paneles = catalogService
-    .getAllItems()
-    .filter((it) => String(it.categoria).toUpperCase().includes("PANEL"));
-  const panelSeleccionado =
-    paneles.find((p) => Number(p.tec?.wp || p.tec?.WP || 0) >= 450) ||
-    paneles[0] ||
-    null;
-  const wpPanel = Number(
-    panelSeleccionado?.tec?.wp || panelSeleccionado?.tec?.WP || 585
-  );
+  // Dimensionamiento solar desde paneles activos de Google Sheets
+  const panelesActivos =
+    typeof catalogService.getPanelesActivos === "function"
+      ? catalogService.getPanelesActivos()
+      : catalogService.getAllItems().filter(
+          (it) =>
+            it.activo !== false &&
+            (Number(it.precio_venta_usd) || 0) > 0 &&
+            String(it.categoria || "").toUpperCase().includes("PANEL") &&
+            (Number(it.tec?.wp) || 0) > 0
+        );
+
+  const panelSeleccionado = panelesActivos[0] || null;
+  const wpPanel = Number(panelSeleccionado?.tec?.wp) || 580;
   const kwpRequerido =
-    (energiaDiariaKwh / rendimiento) / Math.max(1, hsp);
+    (energiaDiariaKwh / (rendimiento * perdidasFactor)) / hsp;
   const cantPaneles = Math.max(
     1,
     Math.ceil((kwpRequerido * 1000) / wpPanel)
   );
   const potenciaPicoKw = Number(((cantPaneles * wpPanel) / 1000).toFixed(2));
 
-  // Selección de inversor Off-Grid / Cargador
-  const inversores = catalogService
+  // Selección de inversor Off-Grid compatible con tensionSistemaV y potencia requerida
+  const factorPico = Number(reglas.factor_inversor_critico) || 1.25;
+  const potRequeridaKw = Math.max(
+    potenciaSimultaneaKw * factorPico,
+    tensionSistemaV >= 24 ? 3 : 1
+  );
+
+  const inversoresActivos = catalogService
     .getAllItems()
     .filter((it) => {
-      const cat = String(it.categoria).toUpperCase();
-      const desc = `${it.modelo} ${it.descripcion}`.toUpperCase();
-      return (
+      if (it.activo === false || (Number(it.precio_venta_usd) || 0) <= 0) return false;
+      const cat = String(it.categoria || "").toUpperCase();
+      const desc = `${it.modelo || ""} ${it.descripcion || ""}`.toUpperCase();
+      const esInversor =
         cat.includes("EQUIPO") ||
+        cat.includes("INVERSOR") ||
         desc.includes("INVERSOR") ||
         desc.includes("OFFGRID") ||
-        desc.includes("OFF-GRID")
-      );
-    })
-    .sort(
-      (a, b) =>
-        (Number(a.tec?.potencia_kw || a.tec?.kw || 0) || 0) -
-        (Number(b.tec?.potencia_kw || b.tec?.kw || 0) || 0)
-    );
+        desc.includes("OFF-GRID") ||
+        desc.includes("AXPERT");
+      if (!esInversor) return false;
 
-  const inversorSeleccionado =
-    inversores.find(
-      (inv) =>
-        (Number(inv.tec?.potencia_kw || inv.tec?.kw || 0) || 0) >=
-        potenciaSimultaneaKw
-    ) ||
-    inversores[inversores.length - 1] ||
+      const vdc = getInversorVdc(it);
+      return vdc === null || vdc === tensionSistemaV;
+    })
+    .map((it) => ({ item: it, kw: getInversorKw(it) }))
+    .filter((x) => x.kw > 0)
+    .sort((a, b) => a.kw - b.kw);
+
+  const elegidoObj =
+    inversoresActivos.find((x) => x.kw >= potRequeridaKw) ||
+    inversoresActivos[inversoresActivos.length - 1] ||
     null;
 
+  const inversorSeleccionado = elegidoObj?.item || null;
   const potInversorKw =
-    Number(inversorSeleccionado?.tec?.potencia_kw || inversorSeleccionado?.tec?.kw) ||
-    Math.max(3, Math.ceil(potenciaSimultaneaKw));
+    elegidoObj?.kw || Math.max(potRequeridaKw, Math.ceil(potenciaSimultaneaKw));
 
   const alertaDescarga =
     potInversorKw > 0.5 * capacidadBancoKwh
@@ -200,7 +249,12 @@ export function calcularOffGrid(catalogService, state) {
   }
   if (inversorSeleccionado) {
     items.push(
-      buildItem(catalogService, inversorSeleccionado.modelo, 1, "Sistema Off-Grid")
+      buildItem(
+        catalogService,
+        inversorSeleccionado.modelo,
+        1,
+        `Sistema Off-Grid ${tensionSistemaV}V`
+      )
     );
   }
 
