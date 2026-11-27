@@ -114,6 +114,14 @@ function renderSelector(st) {
         <option value="48" ${Number(st.tension_sistema_v) === 48 ? "selected" : ""}>48 V</option>
       </select>
     </div>
+    <div class="ce-field" data-campo="tipo_bateria">
+      <label for="f_tipo_bat">Tipo de batería</label>
+      <select id="f_tipo_bat">
+        <option value="LITIO" ${(st.tipo_bateria || "LITIO") === "LITIO" ? "selected" : ""}>Litio (LiFePO4)</option>
+        <option value="GEL" ${st.tipo_bateria === "GEL" ? "selected" : ""}>Gel</option>
+        <option value="AGM" ${st.tipo_bateria === "AGM" ? "selected" : ""}>AGM</option>
+      </select>
+    </div>
     <div class="ce-field" data-campo="dias_autonomia">
       <label for="f_autonomia">Días de autonomía (Off-Grid)</label>
       <input id="f_autonomia" type="number" min="1" max="10" step="1" value="${st.dias_autonomia ?? 1}" />
