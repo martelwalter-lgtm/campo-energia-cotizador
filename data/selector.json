@@ -54,6 +54,7 @@
       "hsp",
       "perdidas_pct",
       "tension_sistema_v",
+      "tipo_bateria",
       "dias_autonomia",
       "dod_pct",
       "dolar_ars"
@@ -75,6 +76,7 @@
       "factor_simultaneidad",
       "hsp",
       "perdidas_pct",
+      "tipo_bateria",
       "tension_sistema_v",
       "dod_pct",
       "dolar_ars"
