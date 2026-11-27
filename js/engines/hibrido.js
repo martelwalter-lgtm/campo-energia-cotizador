@@ -64,6 +64,28 @@ function summarizeItems(items, dolarArs = 1625) {
   };
 }
 
+function normCategoria(cat) {
+  return String(cat || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+function matchTipoBateria(item, tipoBateria) {
+  const texto = `${item?.modelo || ""} ${item?.descripcion || ""} ${item?.tec?.tipo || ""} ${item?.tec?.subcategoria || ""}`.toUpperCase();
+  if (tipoBateria === "LITIO") {
+    return texto.includes("LITIO") || texto.includes("LIFEPO4");
+  }
+  if (tipoBateria === "GEL") {
+    return texto.includes("GEL");
+  }
+  if (tipoBateria === "AGM") {
+    return texto.includes("AGM");
+  }
+  return true;
+}
+
 function getInversorKw(item) {
   const tec = item?.tec || {};
   const directo = Number(
@@ -93,7 +115,13 @@ export function calcularHibrido(catalogService, state) {
   const potenciaCriticaW = Number(state.potencia_critica_w) || 600;
   const horasAutonomiaCritica = Number(state.horas_autonomia_critica) || 12;
   const factorInversorCritico = Number(reglas.factor_inversor_critico) || 1.25;
-  const dodLitio = Number(reglas.dod_por_bateria?.LITIO) || 0.8;
+
+  const tipoBateria = String(state.tipo_bateria || "LITIO").toUpperCase();
+  const dodRegla = reglas.dod_por_bateria?.[tipoBateria];
+  const dod =
+    dodRegla !== undefined
+      ? Math.min(0.95, Math.max(0.2, Number(dodRegla)))
+      : Math.min(0.95, Math.max(0.2, (Number(state.dod_pct) || 80) / 100));
 
   // 1. Potencia mínima del inversor híbrido por carga crítica
   const inversorMinKw = Number(
@@ -108,7 +136,7 @@ export function calcularHibrido(catalogService, state) {
     typeof catalogService.getPanelesActivos === "function"
       ? catalogService.getPanelesActivos()
       : catalogService.getAllItems().filter((it) => {
-          const cat = String(it.categoria || "").toUpperCase();
+          const cat = normCategoria(it.categoria);
           return (
             it.activo !== false &&
             (Number(it.precio_venta_usd) || 0) > 0 &&
@@ -128,10 +156,7 @@ export function calcularHibrido(catalogService, state) {
   const vmpPanel = Number(panelSeleccionado?.tec?.vmp) || 0;
   const impPanel = Number(panelSeleccionado?.tec?.imp) || 0;
 
-  const cantPaneles = Math.max(
-    1,
-    Math.ceil((kwpRequerido * 1000) / wpPanel)
-  );
+  const cantPaneles = Math.max(1, Math.ceil((kwpRequerido * 1000) / wpPanel));
   const potenciaPicoKw = Number(((cantPaneles * wpPanel) / 1000).toFixed(2));
 
   // 3. Selección de inversor híbrido activo
@@ -145,7 +170,7 @@ export function calcularHibrido(catalogService, state) {
       if (it.activo === false || (Number(it.precio_venta_usd) || 0) <= 0) {
         return false;
       }
-      const cat = String(it.categoria || "").toUpperCase();
+      const cat = normCategoria(it.categoria);
       const desc = `${it.modelo || ""} ${it.descripcion || ""}`.toUpperCase();
       const esInv = cat.includes("EQUIPO") || desc.includes("INVERSOR");
       const esHib = desc.includes("HIBRID") || desc.includes("HÍBRID");
@@ -166,9 +191,8 @@ export function calcularHibrido(catalogService, state) {
 
   const inversorSeleccionado = elegidoHib?.item || null;
 
-  // 4. Banco de baterías de litio 48V activo para respaldo crítico / nocturno
-  const energiaCriticaKwh =
-    (potenciaCriticaW * horasAutonomiaCritica) / 1000;
+  // 4. Banco de baterías estrictamente en categoría BATERIAS y tipo LITIO / GEL / AGM
+  const energiaCriticaKwh = (potenciaCriticaW * horasAutonomiaCritica) / 1000;
   const respaldoNocturnoKwh =
     energiaObjetivoDia * ((Number(state.respaldo_nocturno_pct) || 40) / 100);
   const energiaRespaldoObjetivo = Math.max(
@@ -176,26 +200,25 @@ export function calcularHibrido(catalogService, state) {
     respaldoNocturnoKwh
   );
 
-  const bateriasLitio = catalogService.getAllItems().filter((it) => {
-    if (it.activo === false || (Number(it.precio_venta_usd) || 0) <= 0) {
-      return false;
-    }
-    const cat = String(it.categoria || "").toUpperCase();
-    const desc = `${it.modelo || ""} ${it.descripcion || ""}`.toUpperCase();
-    if (desc.startsWith("TIPO DE BATER")) return false;
-    return (
-      (cat.includes("BATER") || desc.includes("BATER")) &&
-      (desc.includes("LITIO") || desc.includes("LIFEPO4") || desc.includes("48V"))
-    );
-  });
+  const bateriasCategoria = catalogService.getAllItems().filter(
+    (it) =>
+      normCategoria(it.categoria) === "BATERIAS" &&
+      it.activo !== false &&
+      (Number(it.precio_venta_usd) || 0) > 0
+  );
 
-  const bateriaSeleccionada = bateriasLitio[0] || null;
+  const bateriaSeleccionada =
+    bateriasCategoria.find((it) => matchTipoBateria(it, tipoBateria)) ||
+    bateriasCategoria[0] ||
+    null;
+
   const kwhPorBateria =
-    Number(bateriaSeleccionada?.tec?.kwh || bateriaSeleccionada?.tec?.energiakwh) ||
-    4.8;
+    Number(
+      bateriaSeleccionada?.tec?.kwh || bateriaSeleccionada?.tec?.energiakwh
+    ) || 4.8;
   const cantBaterias = Math.max(
     1,
-    Math.ceil(energiaRespaldoObjetivo / (dodLitio * kwhPorBateria))
+    Math.ceil(energiaRespaldoObjetivo / (dod * kwhPorBateria))
   );
   const capacidadBancoKwh = Number((cantBaterias * kwhPorBateria).toFixed(2));
 
@@ -216,7 +239,7 @@ export function calcularHibrido(catalogService, state) {
         catalogService,
         bateriaSeleccionada.modelo,
         cantBaterias,
-        `Litio 48V (${kwhPorBateria} kWh c/u)`
+        `${tipoBateria} (${kwhPorBateria} kWh c/u)`
       )
     );
   }
@@ -263,9 +286,7 @@ export function calcularHibrido(catalogService, state) {
   );
   const autonomiaEstimadaHoras =
     potenciaCriticaW > 0
-      ? Number(
-          ((capacidadBancoKwh * dodLitio * 1000) / potenciaCriticaW).toFixed(1)
-        )
+      ? Number(((capacidadBancoKwh * dod * 1000) / potenciaCriticaW).toFixed(1))
       : null;
 
   const totales = summarizeItems(items, state.dolar_ars);
@@ -286,6 +307,7 @@ export function calcularHibrido(catalogService, state) {
       },
       inversor_modelo: inversorSeleccionado?.modelo || null,
       inversor_min_critico_kw: inversorMinKw,
+      tipo_bateria: tipoBateria,
       capacidad_banco_kwh: capacidadBancoKwh,
       cantidad_baterias: cantBaterias,
       potencia_critica_w: potenciaCriticaW,
