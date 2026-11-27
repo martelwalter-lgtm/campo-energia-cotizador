@@ -11,6 +11,30 @@
       "Gral. Lamadrid"
     ]
   },
+  "defaults_selector": {
+    "cliente": "",
+    "localidad": "Olavarría",
+    "tension": "Monofasico",
+    "tipo_instalacion_paneles": "TECHO",
+    "metros_cable_paneles": 10,
+    "zanjeo_suelo": true,
+    "kms_ubicacion": 60,
+    "consumo_mensual_kwh": 75,
+    "cobertura_ongrid_pct": 50,
+    "respaldo_nocturno_pct": 40,
+    "hsp": 4.5,
+    "perdidas_pct": 15,
+    "tension_sistema_v": 48,
+    "tipo_bateria": "LITIO",
+    "dias_autonomia": 1,
+    "dod_pct": 80,
+    "potencia_critica_w": 600,
+    "horas_autonomia_critica": 12,
+    "factor_simultaneidad": 0.8,
+    "dolar_ars": 1625,
+    "tarifa_kwh_ars": 172,
+    "solo_materiales": false
+  },
   "hsp_tabla": {
     "HSP Invierno": 3,
     "HSP Promedio": 4.5,
