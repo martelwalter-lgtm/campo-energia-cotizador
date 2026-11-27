@@ -49,6 +49,8 @@ function aplicarCamposPorModo(modo) {
 }
 
 function renderSelector(st) {
+  const tipoBat = String(st.tipo_bateria || "LITIO").toUpperCase();
+
   el.selectorForm.innerHTML = `
     <div class="ce-field" data-campo="cliente_proyecto">
       <label for="f_cliente">Cliente / Proyecto</label>
@@ -117,9 +119,9 @@ function renderSelector(st) {
     <div class="ce-field" data-campo="tipo_bateria">
       <label for="f_tipo_bat">Tipo de batería</label>
       <select id="f_tipo_bat">
-        <option value="LITIO" ${(st.tipo_bateria || "LITIO") === "LITIO" ? "selected" : ""}>Litio (LiFePO4)</option>
-        <option value="GEL" ${st.tipo_bateria === "GEL" ? "selected" : ""}>Gel</option>
-        <option value="AGM" ${st.tipo_bateria === "AGM" ? "selected" : ""}>AGM</option>
+        <option value="LITIO" ${tipoBat === "LITIO" ? "selected" : ""}>Litio (LiFePO4)</option>
+        <option value="GEL" ${tipoBat === "GEL" ? "selected" : ""}>Gel</option>
+        <option value="AGM" ${tipoBat === "AGM" ? "selected" : ""}>AGM</option>
       </select>
     </div>
     <div class="ce-field" data-campo="dias_autonomia">
@@ -160,6 +162,22 @@ function renderSelector(st) {
 
   aplicarCamposPorModo(sistemaActual);
 
+  const tipoBatSelect = document.getElementById("f_tipo_bat");
+  const dodInput = document.getElementById("f_dod");
+  if (tipoBatSelect && dodInput) {
+    tipoBatSelect.addEventListener("change", () => {
+      const elegida = String(tipoBatSelect.value || "LITIO").toUpperCase();
+      const dodMapa = catalog.getParametros?.()?.reglas_ingenieria?.dod_por_bateria || {};
+      const dodRegla = dodMapa[elegida];
+      dodInput.value =
+        dodRegla !== undefined
+          ? Math.round(Number(dodRegla) * 100)
+          : elegida === "LITIO"
+            ? 80
+            : 50;
+    });
+  }
+
   el.selectorForm.querySelectorAll("input, select").forEach((input) => {
     input.addEventListener("input", onSelectorChange);
     input.addEventListener("change", onSelectorChange);
@@ -181,6 +199,7 @@ function onSelectorChange() {
     hsp: Number(document.getElementById("f_hsp")?.value) || 4.5,
     perdidas_pct: Number(document.getElementById("f_perdidas")?.value) || 15,
     tension_sistema_v: Number(document.getElementById("f_tension_sys")?.value) || 48,
+    tipo_bateria: String(document.getElementById("f_tipo_bat")?.value ?? "LITIO").toUpperCase(),
     dias_autonomia: Number(document.getElementById("f_autonomia")?.value) || 1,
     dod_pct: Number(document.getElementById("f_dod")?.value) || 80,
     potencia_critica_w: Number(document.getElementById("f_pot_crit")?.value) || 600,
