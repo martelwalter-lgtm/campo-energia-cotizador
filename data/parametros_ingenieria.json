@@ -11,30 +11,6 @@
       "Gral. Lamadrid"
     ]
   },
-  "defaults_selector": {
-    "cliente": "",
-    "localidad": "Olavarría",
-    "tension": "Monofasico",
-    "tipo_instalacion_paneles": "TECHO",
-    "metros_cable_paneles": 10,
-    "zanjeo_suelo": true,
-    "kms_ubicacion": 60,
-    "consumo_mensual_kwh": 75,
-    "cobertura_ongrid_pct": 50,
-    "respaldo_nocturno_pct": 40,
-    "hsp": 4.5,
-    "perdidas_pct": 15,
-    "tension_sistema_v": 48,
-    "tipo_bateria": "LITIO",
-    "dias_autonomia": 1,
-    "dod_pct": 80,
-    "potencia_critica_w": 600,
-    "horas_autonomia_critica": 12,
-    "factor_simultaneidad": 0.8,
-    "dolar_ars": 1625,
-    "tarifa_kwh_ars": 172,
-    "solo_materiales": false
-  },
   "hsp_tabla": {
     "HSP Invierno": 3,
     "HSP Promedio": 4.5,
@@ -140,23 +116,3 @@
     "google_sheets_proveedores_csv": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSS8Uwf4Bdrtdnlx4Xn-QgFroGQWF4XS_Iyz4RBjo_DUcgw1WaANAyvFpz8hOXsdVsw8cnlOis6RKKw/pub?gid=0&single=true&output=csv"
   }
 }
-```[cite: 7]
-
-### Cómo verificar el cambio
-
-<Steps>
-  <Step title="Guardá el JSON y validá la sintaxis">
-    Reemplazá `data/parametros_ingenieria.json` con este contenido asegurándote de que no haya comas de más ni texto fuera del objeto principal `{ ... }`[cite: 7].
-    *Verification:* Al recargar la aplicación con **Ctrl + F5**, la consola del navegador no muestra errores de parseo JSON y carga los valores por defecto sin problemas.
-  </Step>
-  <Step title="Verificá el comportamiento al cambiar el tipo de batería">
-    Abrí la pestaña **Off-Grid** o **Híbrido** y alterná entre **Litio**, **Gel** y **AGM**.
-    *Verification:* El DoD sugerido cambia de `80` a `50` y el motor selecciona baterías de `categoria === "BATERIAS"` acordes al tipo y tensión elegidos.
-  </Step>
-</Steps>
-
-<ElicitationsGroup message="¿Qué querés revisar ahora?">
-  <Elicitation label="Revisar selector.json" query="Pasame data/selector.json actualizado para que incluya tipo_bateria en Off-Grid e Híbrido."/>
-  <Elicitation label="Ver offgrid.js completo" query="Pasame js/engines/offgrid.js completo con la selección óptima de serie/paralelo y DoD editable."/>
-  <Elicitation label="Probar en modo Híbrido" query="Revisemos cómo se comporta el modo Híbrido con este parametros_ingenieria.json."/>
-</ElicitationsGroup>
