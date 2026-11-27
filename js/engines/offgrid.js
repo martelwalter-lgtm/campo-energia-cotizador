@@ -73,7 +73,8 @@ function normCategoria(cat) {
 }
 
 function matchTipoBateria(item, tipoBateria) {
-  const texto = `${item?.modelo || ""} ${item?.descripcion || ""} ${item?.tec?.tipo || ""} ${item?.tec?.subcategoria || ""}`.toUpperCase();
+  const texto =
+    `${item?.modelo || ""} ${item?.descripcion || ""} ${item?.tec?.tipo || ""} ${item?.tec?.subcategoria || ""}`.toUpperCase();
   if (tipoBateria === "LITIO") {
     return texto.includes("LITIO") || texto.includes("LIFEPO4");
   }
@@ -84,6 +85,32 @@ function matchTipoBateria(item, tipoBateria) {
     return texto.includes("AGM");
   }
   return true;
+}
+
+function getBateriaVoltaje(item) {
+  const tec = item?.tec || {};
+  const directo = Number(tec.vdcbatt || tec.vdcbat || tec.sist_tension || 0);
+  if ([12, 24, 48].includes(directo)) return directo;
+
+  const texto = `${item?.modelo || ""} ${item?.descripcion || ""}`.toUpperCase();
+  if (/\b48\s*V\b|-48\b/.test(texto)) return 48;
+  if (/\b24\s*V\b|-24\b/.test(texto)) return 24;
+  if (/\b12\s*V\b|-12\b/.test(texto)) return 12;
+  return 12;
+}
+
+function getPanelWp(item) {
+  const tec = item?.tec || {};
+  const directo = Number(tec.wp || tec.WP || tec.potencia_w || 0);
+  if (directo > 0) return directo;
+
+  const texto = `${item?.modelo || ""} ${item?.descripcion || ""}`;
+  const matchW = texto.match(/(\d{3})\s*W(?:p)?\b/i);
+  if (matchW) {
+    const w = Number(matchW[1]);
+    if (w >= 100 && w <= 800) return w;
+  }
+  return 0;
 }
 
 function getInversorKw(item) {
@@ -162,60 +189,102 @@ export function calcularOffGrid(catalogService, state) {
       ? Number(((potenciaTotalW * simultaneidad) / 1000).toFixed(2))
       : Number(Math.max(1, energiaDiariaKwh / 4).toFixed(2));
 
-  // Selección de batería estrictamente en categoría BATERIAS y tipo LITIO / GEL / AGM
+  // 1. Selección de batería estrictamente en categoría BATERIAS + topología Serie/Paralelo
   const tipoBateria = String(state.tipo_bateria || "LITIO").toUpperCase();
-  const dodRegla = reglas.dod_por_bateria?.[tipoBateria];
-  const dodPct =
-    dodRegla !== undefined
-      ? Math.round(Number(dodRegla) * 100)
-      : Number(state.dod_pct) || (tipoBateria === "LITIO" ? 80 : 50);
-  const dod = Math.min(0.95, Math.max(0.2, dodPct / 100));
-
-  const bateriasCategoria = catalogService.getAllItems().filter(
-    (it) =>
-      normCategoria(it.categoria) === "BATERIAS" &&
-      it.activo !== false &&
-      (Number(it.precio_venta_usd) || 0) > 0
-  );
-
-  const bateriaSeleccionada =
-    bateriasCategoria.find((it) => matchTipoBateria(it, tipoBateria)) ||
-    bateriasCategoria[0] ||
-    null;
-
-  const kwhPorBateria =
-    Number(
-      bateriaSeleccionada?.tec?.kwh || bateriaSeleccionada?.tec?.energiakwh
-    ) || (tipoBateria === "LITIO" ? 4.8 : (tensionSistemaV * 100) / 1000);
+  const dodDefault =
+    reglas.dod_por_bateria?.[tipoBateria] !== undefined
+      ? Math.round(Number(reglas.dod_por_bateria[tipoBateria]) * 100)
+      : tipoBateria === "LITIO"
+        ? 80
+        : 50;
+  const dodPct = Number(state.dod_pct) > 0 ? Number(state.dod_pct) : dodDefault;
+  const dod = Math.min(0.95, Math.max(0.15, dodPct / 100));
 
   const energiaBancoRequeridaKwh =
     (energiaDiariaKwh * diasAutonomia) / (dod * rendimiento);
-  const cantBaterias = Math.max(
-    1,
-    Math.ceil(energiaBancoRequeridaKwh / Math.max(0.5, kwhPorBateria))
-  );
-  const capacidadBancoKwh = Number((cantBaterias * kwhPorBateria).toFixed(2));
 
-  // Dimensionamiento solar desde paneles activos de Google Sheets
+  const bateriasCandidatas = catalogService
+    .getAllItems()
+    .filter(
+      (it) =>
+        normCategoria(it.categoria) === "BATERIAS" &&
+        it.activo !== false &&
+        (Number(it.precio_venta_usd) || 0) > 0 &&
+        matchTipoBateria(it, tipoBateria)
+    )
+    .map((it) => {
+      const vBat = getBateriaVoltaje(it);
+      const compatible = tensionSistemaV % vBat === 0;
+      const enSerie = compatible
+        ? Math.max(1, Math.round(tensionSistemaV / vBat))
+        : 1;
+      const ah = Number(it.tec?.batah || it.tec?.bat_ah || 0);
+      const kwhUnit =
+        Number(it.tec?.kwh || it.tec?.energiakwh) ||
+        (ah > 0 ? (vBat * ah) / 1000 : (vBat * 100) / 1000);
+      const minUnidades = Math.max(
+        1,
+        Math.ceil(energiaBancoRequeridaKwh / Math.max(0.5, kwhUnit))
+      );
+      const paralelos = Math.max(1, Math.ceil(minUnidades / enSerie));
+      const totalUnidades = enSerie * paralelos;
+      const capacidadTotal = Number((totalUnidades * kwhUnit).toFixed(2));
+      const costoTotal = totalUnidades * (Number(it.precio_venta_usd) || 0);
+
+      return {
+        item: it,
+        compatible,
+        vBat,
+        enSerie,
+        paralelos,
+        totalUnidades,
+        kwhUnit,
+        capacidadTotal,
+        costoTotal
+      };
+    })
+    .filter((c) => c.compatible)
+    .sort((a, b) => {
+      if (a.paralelos !== b.paralelos) return a.paralelos - b.paralelos;
+      return a.costoTotal - b.costoTotal;
+    });
+
+  const mejorBanco = bateriasCandidatas[0] || null;
+  const bateriaSeleccionada = mejorBanco?.item || null;
+  const unidadesEnSerie = mejorBanco?.enSerie || 1;
+  const ramasParalelo = mejorBanco?.paralelos || 1;
+  const cantBaterias = mejorBanco?.totalUnidades || 1;
+  const kwhPorBateria = mejorBanco?.kwhUnit || 1.2;
+  const capacidadBancoKwh = mejorBanco?.capacidadTotal || 1.2;
+  const topologiaBanco = `${unidadesEnSerie}S${ramasParalelo}P (${tensionSistemaV}V)`;
+
+  // 2. Dimensionamiento solar desde paneles activos del catálogo
   const panelesActivos =
     typeof catalogService.getPanelesActivos === "function"
       ? catalogService.getPanelesActivos()
-      : catalogService.getAllItems().filter(
-          (it) =>
-            it.activo !== false &&
-            (Number(it.precio_venta_usd) || 0) > 0 &&
-            normCategoria(it.categoria).includes("PANEL") &&
-            (Number(it.tec?.wp) || 0) > 0
-        );
+      : [];
 
-  const panelSeleccionado = panelesActivos[0] || null;
-  const wpPanel = Number(panelSeleccionado?.tec?.wp) || 580;
+  const panelesCatalogo = (
+    panelesActivos.length > 0 ? panelesActivos : catalogService.getAllItems()
+  )
+    .filter((it) => {
+      const cat = normCategoria(it.categoria);
+      return (
+        cat.includes("PANEL") &&
+        it.activo !== false &&
+        (Number(it.precio_venta_usd) || 0) > 0
+      );
+    })
+    .sort((a, b) => (getPanelWp(b) || 580) - (getPanelWp(a) || 580));
+
+  const panelSeleccionado = panelesCatalogo[0] || null;
+  const wpPanel = getPanelWp(panelSeleccionado) || 580;
   const kwpRequerido =
     energiaDiariaKwh / (rendimiento * perdidasFactor) / hsp;
   const cantPaneles = Math.max(1, Math.ceil((kwpRequerido * 1000) / wpPanel));
   const potenciaPicoKw = Number(((cantPaneles * wpPanel) / 1000).toFixed(2));
 
-  // Selección de inversor Off-Grid compatible con tensionSistemaV y potencia requerida
+  // 3. Selección de inversor Off-Grid compatible con tensionSistemaV
   const factorPico = Number(reglas.factor_inversor_critico) || 1.25;
   const potRequeridaKw = Math.max(
     potenciaSimultaneaKw * factorPico,
@@ -277,7 +346,7 @@ export function calcularOffGrid(catalogService, state) {
         catalogService,
         bateriaSeleccionada.modelo,
         cantBaterias,
-        `${tipoBateria} · ${kwhPorBateria} kWh c/u`
+        `${tipoBateria} · ${topologiaBanco} · ${kwhPorBateria} kWh c/u`
       )
     );
   }
@@ -336,6 +405,7 @@ export function calcularOffGrid(catalogService, state) {
       potencia_simultanea_kw: potenciaSimultaneaKw,
       dias_autonomia: diasAutonomia,
       tipo_bateria: tipoBateria,
+      topologia_banco: topologiaBanco,
       dod_pct: dodPct,
       capacidad_banco_kwh: capacidadBancoKwh,
       cantidad_baterias: cantBaterias,
